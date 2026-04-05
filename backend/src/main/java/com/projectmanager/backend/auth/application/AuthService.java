@@ -7,6 +7,7 @@ import com.projectmanager.backend.auth.jwt.JwtTokenProvider;
 import com.projectmanager.backend.auth.security.AuthenticatedUser;
 import com.projectmanager.backend.user.domain.User;
 import com.projectmanager.backend.user.domain.UserRepository;
+import com.projectmanager.backend.user.domain.UserRole;
 import com.projectmanager.backend.user.dto.UserResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -31,7 +32,7 @@ public class AuthService {
                 request.name(),
                 request.email(),
                 passwordEncoder.encode(request.password()),
-                request.role(),
+                UserRole.MEMBER,
                 request.department()
         );
         User savedUser = userRepository.save(user);
@@ -71,4 +72,3 @@ public class AuthService {
         );
     }
 }
-

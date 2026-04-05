@@ -4,22 +4,12 @@ import type { FormEvent } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { login, signup } from '../features/auth/api/authApi'
 import { useAuthStore } from '../features/auth/store/useAuthStore'
-import type { UserRole } from '../features/auth/types/auth'
 
 type AuthPageProps = {
   mode: 'login' | 'signup'
   title: string
   description: string
 }
-
-const roleOptions: UserRole[] = [
-  'MEMBER',
-  'LEADER',
-  'MENTOR',
-  'PROFESSOR',
-  'VIEWER',
-  'ADMIN',
-]
 
 export function AuthPage({ mode, title, description }: AuthPageProps) {
   const navigate = useNavigate()
@@ -29,7 +19,6 @@ export function AuthPage({ mode, title, description }: AuthPageProps) {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [department, setDepartment] = useState('')
-  const [role, setRole] = useState<UserRole>('MEMBER')
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
 
   const authMutation = useMutation({
@@ -39,7 +28,6 @@ export function AuthPage({ mode, title, description }: AuthPageProps) {
           name,
           email,
           password,
-          role,
           department,
         })
       }
@@ -96,26 +84,13 @@ export function AuthPage({ mode, title, description }: AuthPageProps) {
           />
 
           {mode === 'signup' && (
-            <>
-              <input
-                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-blue-500"
-                placeholder="소속(예: 컴퓨터공학과)"
-                value={department}
-                onChange={(event) => setDepartment(event.target.value)}
-                required
-              />
-              <select
-                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-blue-500"
-                value={role}
-                onChange={(event) => setRole(event.target.value as UserRole)}
-              >
-                {roleOptions.map((value) => (
-                  <option key={value} value={value}>
-                    {value}
-                  </option>
-                ))}
-              </select>
-            </>
+            <input
+              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-blue-500"
+              placeholder="소속(예: 컴퓨터공학과)"
+              value={department}
+              onChange={(event) => setDepartment(event.target.value)}
+              required
+            />
           )}
 
           {errorMessage && <p className="text-sm text-red-600">{errorMessage}</p>}
@@ -150,3 +125,4 @@ export function AuthPage({ mode, title, description }: AuthPageProps) {
     </main>
   )
 }
+

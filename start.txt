@@ -1,0 +1,2 @@
+### 시작 프롬프트 
+[PROJECT_MANAGEMENT_PRD.md](PROJECT_MANAGEMENT_PRD.md) 와 [PROJECT_PROGRESS.md](PROJECT_PROGRESS.md) 파일을 참고하여 Phrase 1이 완료되었다면 Phase 2를 진행해줘.

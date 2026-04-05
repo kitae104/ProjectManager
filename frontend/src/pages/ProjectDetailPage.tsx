@@ -137,8 +137,24 @@ export function ProjectDetailPage() {
 
   return (
     <section className="space-y-6">
-      <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+      <div className="flex items-center justify-between rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
         <h2 className="text-xl font-bold text-slate-900">프로젝트 상세</h2>
+        <div className="flex gap-2">
+          <button
+            type="button"
+            className="rounded-lg border border-blue-300 px-4 py-2 text-sm font-semibold text-blue-700 hover:bg-blue-50"
+            onClick={() => navigate(`/projects/${numericProjectId}/board`)}
+          >
+            칸반 보드 이동
+          </button>
+          <button
+            type="button"
+            className="rounded-lg border border-emerald-300 px-4 py-2 text-sm font-semibold text-emerald-700 hover:bg-emerald-50"
+            onClick={() => navigate(`/projects/${numericProjectId}/calendar`)}
+          >
+            캘린더 이동
+          </button>
+        </div>
       </div>
 
       <form

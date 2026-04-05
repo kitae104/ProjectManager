@@ -4,9 +4,11 @@ import { ProtectedRoute } from '../features/auth/components/ProtectedRoute'
 import { AppLayout } from '../layouts/AppLayout'
 import { AuthPage } from '../pages/AuthPage'
 import { DashboardPage } from '../pages/DashboardPage'
+import { ProjectCalendarPage } from '../pages/ProjectCalendarPage'
 import { ProjectDetailPage } from '../pages/ProjectDetailPage'
 import { ProjectsPage } from '../pages/ProjectsPage'
 import { PlaceholderPage } from '../pages/PlaceholderPage'
+import { TaskBoardPage } from '../pages/TaskBoardPage'
 
 export const router = createBrowserRouter([
   {
@@ -55,21 +57,11 @@ export const router = createBrowserRouter([
       },
       {
         path: '/projects/:projectId/board',
-        element: (
-          <PlaceholderPage
-            title="칸반 보드"
-            description="Task 상태(TODO, IN_PROGRESS, IN_REVIEW, DONE, BLOCKED)를 관리합니다."
-          />
-        ),
+        element: <TaskBoardPage />,
       },
       {
         path: '/projects/:projectId/calendar',
-        element: (
-          <PlaceholderPage
-            title="캘린더"
-            description="마일스톤과 일정(회의/발표/제출)을 관리합니다."
-          />
-        ),
+        element: <ProjectCalendarPage />,
       },
       {
         path: '/projects/:projectId/documents',

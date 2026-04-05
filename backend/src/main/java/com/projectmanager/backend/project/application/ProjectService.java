@@ -1,15 +1,20 @@
 package com.projectmanager.backend.project.application;
 
+import com.projectmanager.backend.milestone.domain.MilestoneRepository;
+import com.projectmanager.backend.document.domain.DocumentRepository;
+import com.projectmanager.backend.meetingnote.domain.MeetingNoteRepository;
 import com.projectmanager.backend.project.domain.Project;
 import com.projectmanager.backend.project.domain.ProjectMember;
 import com.projectmanager.backend.project.domain.ProjectMemberRepository;
 import com.projectmanager.backend.project.domain.ProjectMemberRole;
 import com.projectmanager.backend.project.domain.ProjectRepository;
+import com.projectmanager.backend.schedule.domain.ScheduleRepository;
 import com.projectmanager.backend.project.dto.ProjectCreateRequest;
 import com.projectmanager.backend.project.dto.ProjectMemberCreateRequest;
 import com.projectmanager.backend.project.dto.ProjectMemberResponse;
 import com.projectmanager.backend.project.dto.ProjectResponse;
 import com.projectmanager.backend.project.dto.ProjectUpdateRequest;
+import com.projectmanager.backend.task.domain.TaskRepository;
 import com.projectmanager.backend.user.domain.User;
 import com.projectmanager.backend.user.domain.UserRepository;
 import java.util.List;
@@ -23,6 +28,11 @@ public class ProjectService {
 
     private final ProjectRepository projectRepository;
     private final ProjectMemberRepository projectMemberRepository;
+    private final DocumentRepository documentRepository;
+    private final MeetingNoteRepository meetingNoteRepository;
+    private final MilestoneRepository milestoneRepository;
+    private final ScheduleRepository scheduleRepository;
+    private final TaskRepository taskRepository;
     private final UserRepository userRepository;
 
     @Transactional
@@ -93,6 +103,11 @@ public class ProjectService {
         if (!projectRepository.existsById(projectId)) {
             throw new IllegalArgumentException("프로젝트를 찾을 수 없습니다.");
         }
+        documentRepository.deleteByProjectId(projectId);
+        meetingNoteRepository.deleteByProjectId(projectId);
+        milestoneRepository.deleteByProjectId(projectId);
+        scheduleRepository.deleteByProjectId(projectId);
+        taskRepository.deleteByProjectId(projectId);
         projectMemberRepository.deleteByProjectId(projectId);
         projectRepository.deleteById(projectId);
     }
