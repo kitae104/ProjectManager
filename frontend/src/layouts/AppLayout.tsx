@@ -1,4 +1,5 @@
-import { NavLink, Outlet } from 'react-router-dom'
+import { NavLink, Outlet, useNavigate } from 'react-router-dom'
+import { useAuthStore } from '../features/auth/store/useAuthStore'
 import { useUiStore } from '../store/uiStore'
 
 const navItems = [
@@ -8,8 +9,16 @@ const navItems = [
 ]
 
 export function AppLayout() {
+  const navigate = useNavigate()
   const sidebarCollapsed = useUiStore((state) => state.sidebarCollapsed)
   const toggleSidebar = useUiStore((state) => state.toggleSidebar)
+  const user = useAuthStore((state) => state.user)
+  const clearAuth = useAuthStore((state) => state.clearAuth)
+
+  function handleLogout() {
+    clearAuth()
+    navigate('/login', { replace: true })
+  }
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-800">
@@ -59,9 +68,22 @@ export function AppLayout() {
                 프로젝트 관리 플랫폼
               </h1>
             </div>
-            <span className="rounded-full bg-blue-600 px-3 py-1 text-xs font-semibold text-white">
-              Phase 1
-            </span>
+            <div className="flex items-center gap-3">
+              <span className="rounded-full bg-blue-600 px-3 py-1 text-xs font-semibold text-white">
+                Phase 3
+              </span>
+              <div className="text-right">
+                <p className="text-sm font-semibold text-slate-800">{user?.name}</p>
+                <p className="text-xs text-slate-500">{user?.role}</p>
+              </div>
+              <button
+                type="button"
+                onClick={handleLogout}
+                className="rounded-md border border-slate-300 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-100"
+              >
+                로그아웃
+              </button>
+            </div>
           </header>
           <main className="flex-1 p-6">
             <Outlet />
@@ -71,4 +93,3 @@ export function AppLayout() {
     </div>
   )
 }
-

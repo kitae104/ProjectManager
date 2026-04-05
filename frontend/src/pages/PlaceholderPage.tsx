@@ -15,20 +15,20 @@ export function PlaceholderPage({ title, description }: PlaceholderPageProps) {
           <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">
             Status
           </p>
-          <p className="mt-2 text-sm text-slate-700">초기 화면 구성 완료</p>
+          <p className="mt-2 text-sm text-slate-700">현재 페이지는 준비 중입니다.</p>
         </article>
         <article className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
           <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">
             Next
           </p>
-          <p className="mt-2 text-sm text-slate-700">Phase 2 인증/권한 구현 예정</p>
+          <p className="mt-2 text-sm text-slate-700">다음 Phase 기능 구현 예정입니다.</p>
         </article>
         <article className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
           <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">
             Note
           </p>
           <p className="mt-2 text-sm text-slate-700">
-            API 연동은 `VITE_API_BASE_URL` 환경 변수로 연결됩니다.
+            API 연결은 `VITE_API_BASE_URL` 환경 변수로 구성합니다.
           </p>
         </article>
       </div>

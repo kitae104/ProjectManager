@@ -1,18 +1,23 @@
-import { Navigate, createBrowserRouter } from 'react-router-dom'
+import { createBrowserRouter } from 'react-router-dom'
+import { RootRedirect } from '../features/auth/components/RootRedirect'
+import { ProtectedRoute } from '../features/auth/components/ProtectedRoute'
 import { AppLayout } from '../layouts/AppLayout'
 import { AuthPage } from '../pages/AuthPage'
 import { DashboardPage } from '../pages/DashboardPage'
+import { ProjectDetailPage } from '../pages/ProjectDetailPage'
+import { ProjectsPage } from '../pages/ProjectsPage'
 import { PlaceholderPage } from '../pages/PlaceholderPage'
 
 export const router = createBrowserRouter([
   {
     path: '/',
-    element: <Navigate to="/dashboard" replace />,
+    element: <RootRedirect />,
   },
   {
     path: '/login',
     element: (
       <AuthPage
+        mode="login"
         title="로그인"
         description="프로젝트 매니저 플랫폼에 로그인해 주세요."
       />
@@ -22,6 +27,7 @@ export const router = createBrowserRouter([
     path: '/signup',
     element: (
       <AuthPage
+        mode="signup"
         title="회원가입"
         description="학생 프로젝트 관리를 위한 계정을 생성해 주세요."
       />
@@ -29,7 +35,11 @@ export const router = createBrowserRouter([
   },
   {
     path: '/',
-    element: <AppLayout />,
+    element: (
+      <ProtectedRoute>
+        <AppLayout />
+      </ProtectedRoute>
+    ),
     children: [
       {
         path: '/dashboard',
@@ -37,21 +47,11 @@ export const router = createBrowserRouter([
       },
       {
         path: '/projects',
-        element: (
-          <PlaceholderPage
-            title="프로젝트 목록"
-            description="프로젝트 생성/조회/필터링 기능의 시작 지점입니다."
-          />
-        ),
+        element: <ProjectsPage />,
       },
       {
         path: '/projects/:projectId',
-        element: (
-          <PlaceholderPage
-            title="프로젝트 상세"
-            description="개요, 업무, 일정, 팀원, 문서, 회의록, 피드백, AI 인사이트 탭을 제공합니다."
-          />
-        ),
+        element: <ProjectDetailPage />,
       },
       {
         path: '/projects/:projectId/board',
@@ -101,13 +101,14 @@ export const router = createBrowserRouter([
       {
         path: '/settings',
         element: (
-          <PlaceholderPage
-            title="설정"
-            description="프로필, 권한, 알림, 환경 설정을 관리합니다."
-          />
+          <ProtectedRoute roles={['ADMIN']}>
+            <PlaceholderPage
+              title="설정"
+              description="관리자 권한이 필요한 설정 페이지입니다."
+            />
+          </ProtectedRoute>
         ),
       },
     ],
   },
 ])
-
