@@ -1,0 +1,40 @@
+# OS / Editor
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.iml
+
+# Logs / temp
+*.log
+*.tmp
+*.swp
+
+# Env / secrets
+.env
+.env.*
+!.env.example
+!.env.sample
+
+# Backend (Spring)
+backend/.gradle/
+backend/build/
+backend/out/
+backend/bin/
+backend/.classpath
+backend/.project
+backend/.settings/
+backend/src/main/resources/application-local.yml
+backend/src/main/resources/application-local.properties
+
+# Frontend (Vite / Node)
+frontend/node_modules/
+frontend/dist/
+frontend/.vite/
+frontend/.env
+frontend/.env.*
+!frontend/.env.example
+
+# Coverage
+coverage/
+
