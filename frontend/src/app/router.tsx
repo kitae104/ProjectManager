@@ -1,6 +1,7 @@
 import { Navigate, createBrowserRouter } from 'react-router-dom'
 import { AppLayout } from '../layouts/AppLayout'
 import { AuthPage } from '../pages/AuthPage'
+import { DashboardPage } from '../pages/DashboardPage'
 import { PlaceholderPage } from '../pages/PlaceholderPage'
 
 export const router = createBrowserRouter([
@@ -32,12 +33,7 @@ export const router = createBrowserRouter([
     children: [
       {
         path: '/dashboard',
-        element: (
-          <PlaceholderPage
-            title="대시보드"
-            description="프로젝트 현황, 위험 알림, 업무 진행률을 한 화면에서 확인합니다."
-          />
-        ),
+        element: <DashboardPage />,
       },
       {
         path: '/projects',
