@@ -176,6 +176,71 @@
 - 프로젝트 수정 / 삭제
 - 프로젝트 상태 관리
 
+### 새 프로젝트 생성: 권한별 사용 예시
+
+#### ADMIN
+- 목적: 학기/트랙 운영 관점에서 공식 프로젝트를 먼저 등록
+- 예시:
+  - 제목: `2026-1 캡스톤 공통 운영`
+  - 카테고리: `CAPSTONE`
+  - 상태: `PLANNING`
+  - 설명: 학기 공통 공지, 평가 일정, 운영 체크리스트를 관리하는 프로젝트
+- 사용 포인트:
+  - 초기에 리더(leaderId) 지정
+  - 팀별 프로젝트 생성 기준(카테고리/네이밍 규칙) 제시
+
+#### LEADER
+- 목적: 실제 팀 프로젝트 생성 및 팀 운영 시작
+- 예시:
+  - 제목: `AI 회의록 자동화 플랫폼`
+  - 카테고리: `AI`
+  - 상태: `PLANNING` 또는 `IN_PROGRESS`
+  - 설명: 팀 목표, MVP 범위, 주요 마일스톤을 포함해 등록
+- 사용 포인트:
+  - 생성 직후 팀원 초대 및 역할 배정
+  - 기본 보드/캘린더/문서 탭 즉시 세팅
+
+#### MEMBER
+- 목적: 팀 내 세부 과제/실험성 서브 프로젝트 제안(정책 허용 시)
+- 예시:
+  - 제목: `추천 모델 성능 개선 실험`
+  - 카테고리: `DEVELOPMENT`
+  - 상태: `PLANNING`
+  - 설명: 본 프로젝트와의 연계, 종료 기준, 산출물 명시
+- 사용 포인트:
+  - 기본 원칙은 리더 승인 후 생성
+  - 중복 프로젝트 난립 방지를 위해 명확한 범위 작성
+
+#### MENTOR
+- 목적: 멘토링 관점에서 점검용 프로젝트 생성 또는 트래킹
+- 예시:
+  - 제목: `멘토링 점검 - 3팀`
+  - 카테고리: `ETC`
+  - 상태: `IN_PROGRESS`
+  - 설명: 리스크 항목, 피드백 로그, 다음 점검 액션 관리
+- 사용 포인트:
+  - 피드백/리스크 관리 중심으로 구조 설계
+  - 주간 점검 단위 문서/회의록 템플릿 사용
+
+#### PROFESSOR
+- 목적: 과목/분반 단위 운영 및 평가 흐름 관리
+- 예시:
+  - 제목: `2026-1 캡스톤 분반 A 운영`
+  - 카테고리: `CAPSTONE`
+  - 상태: `IN_PROGRESS`
+  - 설명: 팀별 진행률, 중간/최종 발표, 평가 기준 기록
+- 사용 포인트:
+  - 프로젝트 상태/진행률 비교용 대시보드 활용
+  - 교수 피드백 기록 구조 사전 정의
+
+#### VIEWER
+- 목적: 조회 전용 사용자(프로젝트 생성 권장 대상 아님)
+- 예시:
+  - 생성 대신 기존 프로젝트 열람 및 진행 현황 확인
+- 사용 포인트:
+  - 정책상 `VIEWER`는 생성 권한 비부여를 기본값으로 정의
+  - 생성 필요 시 ADMIN 승인 후 역할 변경
+
 ### 프로젝트 카테고리
 - CAPSTONE
 - STARTUP
@@ -382,6 +447,66 @@ Spring AI를 활용하여 프로젝트 상태를 해석하고,
 
 출력:
 - 교수 제출용 주간 보고서 초안
+
+---
+
+## 5-9. 설정(Settings)
+### 목표
+사용자/운영자 관점에서 서비스 공통 동작을 제어하고,
+권한별 작업 방식이 안정적으로 유지되도록 설정 기능을 제공한다.
+
+### 공통 설정(모든 로그인 사용자)
+- 프로필 설정
+  - 이름, 소속(학과/부서), 프로필 이미지
+- 알림 설정
+  - 마감 임박 알림 on/off
+  - 블로킹 업무 알림 on/off
+  - 회의 일정 알림 on/off
+- 화면 설정
+  - 라이트/다크 모드
+  - 사이드바 기본 펼침/접힘
+- 보안 설정
+  - 비밀번호 변경
+  - 토큰 만료 시 재로그인 정책 안내
+
+### 프로젝트 기본 설정(LEADER 이상)
+- 새 프로젝트 기본값
+  - 기본 카테고리
+  - 기본 상태
+  - 기본 템플릿(설명/문서 초안)
+- 팀 운영 기본 규칙
+  - 역할 자동 제안
+  - 마일스톤 기본 구조
+
+### 운영 설정(ADMIN 전용)
+- 사용자/권한 정책
+  - 역할 변경 정책
+  - `VIEWER` 생성 권한 제한 여부
+- 시스템 정책
+  - 기본 CORS/보안 정책(운영 환경 기준)
+  - 파일 업로드 제한 용량
+  - 학기 기본값 및 프로젝트 네이밍 규칙
+
+### 설정 페이지 구성안
+- `/settings/profile`
+- `/settings/notifications`
+- `/settings/display`
+- `/settings/security`
+- `/settings/project-defaults` (LEADER 이상)
+- `/settings/admin` (ADMIN 전용)
+
+### 설정 API 설계 방향(초안)
+- `GET /api/settings/me`
+- `PUT /api/settings/me`
+- `PUT /api/settings/password`
+- `GET /api/settings/notifications`
+- `PUT /api/settings/notifications`
+- `GET /api/settings/display`
+- `PUT /api/settings/display`
+- `GET /api/settings/project-defaults` (LEADER 이상)
+- `PUT /api/settings/project-defaults` (LEADER 이상)
+- `GET /api/settings/admin` (ADMIN)
+- `PUT /api/settings/admin` (ADMIN)
 
 ---
 
@@ -624,6 +749,19 @@ Spring AI를 활용하여 프로젝트 상태를 해석하고,
 - POST /api/meeting-notes/{id}/ai/summary
 - POST /api/projects/{id}/ai/weekly-report
 - POST /api/projects/{id}/ai/next-actions
+
+### Settings API (Plan)
+- GET /api/settings/me
+- PUT /api/settings/me
+- PUT /api/settings/password
+- GET /api/settings/notifications
+- PUT /api/settings/notifications
+- GET /api/settings/display
+- PUT /api/settings/display
+- GET /api/settings/project-defaults
+- PUT /api/settings/project-defaults
+- GET /api/settings/admin
+- PUT /api/settings/admin
 
 ---
 

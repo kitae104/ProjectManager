@@ -2,25 +2,30 @@ package com.projectmanager.backend.project.application;
 
 import com.projectmanager.backend.ai.domain.AIInsightRepository;
 import com.projectmanager.backend.artifact.domain.ArtifactRepository;
-import com.projectmanager.backend.milestone.domain.MilestoneRepository;
+import com.projectmanager.backend.auth.security.AuthenticatedUser;
 import com.projectmanager.backend.document.domain.DocumentRepository;
 import com.projectmanager.backend.meetingnote.domain.MeetingNoteRepository;
+import com.projectmanager.backend.milestone.domain.MilestoneRepository;
 import com.projectmanager.backend.project.domain.Project;
 import com.projectmanager.backend.project.domain.ProjectMember;
 import com.projectmanager.backend.project.domain.ProjectMemberRepository;
 import com.projectmanager.backend.project.domain.ProjectMemberRole;
 import com.projectmanager.backend.project.domain.ProjectRepository;
-import com.projectmanager.backend.schedule.domain.ScheduleRepository;
 import com.projectmanager.backend.project.dto.ProjectCreateRequest;
 import com.projectmanager.backend.project.dto.ProjectMemberCreateRequest;
 import com.projectmanager.backend.project.dto.ProjectMemberResponse;
 import com.projectmanager.backend.project.dto.ProjectResponse;
 import com.projectmanager.backend.project.dto.ProjectUpdateRequest;
+import com.projectmanager.backend.schedule.domain.ScheduleRepository;
+import com.projectmanager.backend.settings.application.SettingsService;
+import com.projectmanager.backend.settings.dto.ProjectCreationPolicyResponse;
 import com.projectmanager.backend.task.domain.TaskRepository;
 import com.projectmanager.backend.user.domain.User;
 import com.projectmanager.backend.user.domain.UserRepository;
+import com.projectmanager.backend.user.domain.UserRole;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -38,9 +43,11 @@ public class ProjectService {
     private final ScheduleRepository scheduleRepository;
     private final TaskRepository taskRepository;
     private final UserRepository userRepository;
+    private final SettingsService settingsService;
 
     @Transactional
-    public ProjectResponse createProject(ProjectCreateRequest request) {
+    public ProjectResponse createProject(ProjectCreateRequest request, AuthenticatedUser actor) {
+        validateProjectCreatePermission(actor);
         User leader = findLeader(request.leaderId());
 
         Project project = Project.create(
@@ -62,7 +69,7 @@ public class ProjectService {
                     savedProject,
                     leader,
                     ProjectMemberRole.LEADER,
-                    "프로젝트 리더"
+                    "Project leader"
             );
             projectMemberRepository.save(leaderMember);
         }
@@ -76,6 +83,11 @@ public class ProjectService {
                 .stream()
                 .map(ProjectResponse::from)
                 .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public ProjectCreationPolicyResponse getViewerProjectCreationPolicy() {
+        return new ProjectCreationPolicyResponse(settingsService.isViewerProjectCreationAllowed());
     }
 
     @Transactional(readOnly = true)
@@ -105,7 +117,7 @@ public class ProjectService {
     @Transactional
     public void deleteProject(Long projectId) {
         if (!projectRepository.existsById(projectId)) {
-            throw new IllegalArgumentException("프로젝트를 찾을 수 없습니다.");
+            throw new IllegalArgumentException("Project not found.");
         }
         aiInsightRepository.deleteByProjectId(projectId);
         artifactRepository.deleteByProjectId(projectId);
@@ -131,10 +143,10 @@ public class ProjectService {
     public ProjectMemberResponse addProjectMember(Long projectId, ProjectMemberCreateRequest request) {
         Project project = findProject(projectId);
         User user = userRepository.findById(request.userId())
-                .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
+                .orElseThrow(() -> new IllegalArgumentException("User not found."));
 
         if (projectMemberRepository.existsByProjectIdAndUserId(projectId, user.getId())) {
-            throw new IllegalArgumentException("이미 프로젝트에 참여 중인 사용자입니다.");
+            throw new IllegalArgumentException("User is already participating in this project.");
         }
 
         ProjectMember projectMember = ProjectMember.create(
@@ -150,19 +162,29 @@ public class ProjectService {
     @Transactional
     public void removeProjectMember(Long projectId, Long memberId) {
         ProjectMember member = projectMemberRepository.findByIdAndProjectId(memberId, projectId)
-                .orElseThrow(() -> new IllegalArgumentException("프로젝트 멤버를 찾을 수 없습니다."));
+                .orElseThrow(() -> new IllegalArgumentException("Project member not found."));
         projectMemberRepository.delete(member);
+    }
+
+    private void validateProjectCreatePermission(AuthenticatedUser actor) {
+        if (actor.role() != UserRole.VIEWER) {
+            return;
+        }
+        if (settingsService.isViewerProjectCreationAllowed()) {
+            return;
+        }
+        throw new AccessDeniedException("VIEWER cannot create projects.");
     }
 
     private void ensureProjectExists(Long projectId) {
         if (!projectRepository.existsById(projectId)) {
-            throw new IllegalArgumentException("프로젝트를 찾을 수 없습니다.");
+            throw new IllegalArgumentException("Project not found.");
         }
     }
 
     private Project findProject(Long projectId) {
         return projectRepository.findById(projectId)
-                .orElseThrow(() -> new IllegalArgumentException("프로젝트를 찾을 수 없습니다."));
+                .orElseThrow(() -> new IllegalArgumentException("Project not found."));
     }
 
     private User findLeader(Long leaderId) {
@@ -170,6 +192,6 @@ public class ProjectService {
             return null;
         }
         return userRepository.findById(leaderId)
-                .orElseThrow(() -> new IllegalArgumentException("리더 사용자를 찾을 수 없습니다."));
+                .orElseThrow(() -> new IllegalArgumentException("Leader user not found."));
     }
 }

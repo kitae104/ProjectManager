@@ -1,16 +1,20 @@
 import { useQueries, useQuery } from '@tanstack/react-query'
 import { useMemo, useState } from 'react'
 import { NavLink, Outlet, useNavigate } from 'react-router-dom'
+import {
+  getRoleCapability,
+  type MenuKey,
+} from '../features/auth/constants/roleCapabilities'
 import { useAuthStore } from '../features/auth/store/useAuthStore'
 import { getProjects } from '../features/projects/api/projectsApi'
 import { getProjectTasks } from '../features/tasks/api/tasksApi'
 import { useUiStore } from '../store/uiStore'
 
-const navItems = [
-  { to: '/dashboard', label: '대시보드' },
-  { to: '/projects', label: '프로젝트' },
-  { to: '/settings', label: '설정' },
-]
+const navItemsByMenu: Record<MenuKey, { to: string; label: string }> = {
+  dashboard: { to: '/dashboard', label: 'Dashboard' },
+  projects: { to: '/projects', label: 'Projects' },
+  settings: { to: '/settings', label: 'Settings' },
+}
 
 export function AppLayout() {
   const navigate = useNavigate()
@@ -20,6 +24,8 @@ export function AppLayout() {
   const toggleTheme = useUiStore((state) => state.toggleTheme)
   const user = useAuthStore((state) => state.user)
   const clearAuth = useAuthStore((state) => state.clearAuth)
+  const roleCapability = getRoleCapability(user?.role)
+  const navItems = roleCapability.menu.map((menuKey) => navItemsByMenu[menuKey])
   const [notificationOpen, setNotificationOpen] = useState(false)
 
   const projectsQuery = useQuery({
@@ -40,39 +46,44 @@ export function AppLayout() {
   const notifications = useMemo(() => {
     const today = new Date()
     const items: Array<{ id: string; level: 'warn' | 'danger'; message: string }> = []
+
     for (const query of taskQueries) {
       if (!query.data?.data) {
         continue
       }
+
       for (const task of query.data.data) {
         if (task.status === 'BLOCKED') {
           items.push({
             id: `blocked-${task.id}`,
             level: 'danger',
-            message: `블로킹 업무: ${task.title}`,
+            message: `Blocked task: ${task.title}`,
           })
         }
+
         if (task.dueDate && task.status !== 'DONE') {
           const dueDate = new Date(`${task.dueDate}T00:00:00`)
           const diffDays = Math.floor(
             (dueDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24),
           )
+
           if (diffDays < 0) {
             items.push({
               id: `overdue-${task.id}`,
               level: 'danger',
-              message: `마감 초과: ${task.title} (${task.dueDate})`,
+              message: `Overdue: ${task.title} (${task.dueDate})`,
             })
           } else if (diffDays <= 2) {
             items.push({
               id: `due-soon-${task.id}`,
               level: 'warn',
-              message: `마감 임박: ${task.title} (${task.dueDate})`,
+              message: `Due soon: ${task.title} (${task.dueDate})`,
             })
           }
         }
       }
     }
+
     return items.slice(0, 12)
   }, [taskQueries])
 
@@ -101,6 +112,7 @@ export function AppLayout() {
               {sidebarCollapsed ? '>' : '<'}
             </button>
           </div>
+
           <nav className="space-y-1 px-3 py-4">
             {navItems.map((item) => (
               <NavLink
@@ -108,9 +120,7 @@ export function AppLayout() {
                 to={item.to}
                 className={({ isActive }) =>
                   `block rounded-md px-3 py-2 text-sm font-medium ${
-                    isActive
-                      ? 'bg-blue-50 text-blue-700'
-                      : 'text-slate-600 hover:bg-slate-100'
+                    isActive ? 'bg-blue-50 text-blue-700' : 'text-slate-600 hover:bg-slate-100'
                   }`
                 }
               >
@@ -119,38 +129,40 @@ export function AppLayout() {
             ))}
           </nav>
         </aside>
+
         <div className="flex min-h-screen flex-1 flex-col">
           <header className="flex h-16 items-center justify-between border-b border-slate-200 bg-white px-6">
             <div>
               <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">
                 Student Project Management
               </p>
-              <h1 className="text-base font-semibold text-slate-900">
-                프로젝트 관리 플랫폼
-              </h1>
+              <h1 className="text-base font-semibold text-slate-900">Project Manager</h1>
             </div>
+
             <div className="flex items-center gap-3">
               <button
                 type="button"
                 onClick={toggleTheme}
                 className="rounded-md border border-slate-300 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-100"
               >
-                {theme === 'dark' ? '라이트 모드' : '다크 모드'}
+                {theme === 'dark' ? 'Light Mode' : 'Dark Mode'}
               </button>
+
               <div className="relative">
                 <button
                   type="button"
                   onClick={() => setNotificationOpen((prev) => !prev)}
                   className="rounded-md border border-slate-300 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-100"
                 >
-                  알림 {notifications.length > 0 ? `(${notifications.length})` : ''}
+                  Alerts {notifications.length > 0 ? `(${notifications.length})` : ''}
                 </button>
+
                 {notificationOpen && (
                   <div className="absolute right-0 z-20 mt-2 w-80 rounded-xl border border-slate-200 bg-white p-3 shadow-lg">
-                    <p className="text-xs font-semibold text-slate-500">최근 알림</p>
+                    <p className="text-xs font-semibold text-slate-500">Recent alerts</p>
                     <div className="mt-2 max-h-72 space-y-2 overflow-auto">
                       {notifications.length === 0 && (
-                        <p className="text-sm text-slate-500">확인할 알림이 없습니다.</p>
+                        <p className="text-sm text-slate-500">No pending alerts.</p>
                       )}
                       {notifications.map((notification) => (
                         <div
@@ -168,22 +180,22 @@ export function AppLayout() {
                   </div>
                 )}
               </div>
-              <span className="rounded-full bg-blue-600 px-3 py-1 text-xs font-semibold text-white">
-                Phase 8
-              </span>
+
               <div className="text-right">
                 <p className="text-sm font-semibold text-slate-800">{user?.name}</p>
                 <p className="text-xs text-slate-500">{user?.role}</p>
               </div>
+
               <button
                 type="button"
                 onClick={handleLogout}
                 className="rounded-md border border-slate-300 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-100"
               >
-                로그아웃
+                Logout
               </button>
             </div>
           </header>
+
           <main className="flex-1 p-6">
             <Outlet />
           </main>

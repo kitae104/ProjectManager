@@ -77,5 +77,18 @@ public class User {
     ) {
         return new User(name, email, encodedPassword, role, department, null);
     }
-}
 
+    public void updateProfile(String name, String department, String profileImage) {
+        this.name = name;
+        this.department = department;
+        this.profileImage = profileImage;
+    }
+
+    public void updatePassword(String encodedPassword) {
+        this.password = encodedPassword;
+    }
+
+    public void updateRole(UserRole role) {
+        this.role = role;
+    }
+}

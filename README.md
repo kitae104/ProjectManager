@@ -148,3 +148,29 @@ Set-ExecutionPolicy -Scope Process Bypass
 ```powershell
 ./run-dev.ps1 -InstallFrontendDeps
 ```
+
+## 권한별 새 프로젝트 생성 예시
+
+아래는 현재 제공 권한(`ADMIN`, `LEADER`, `MEMBER`, `MENTOR`, `PROFESSOR`, `VIEWER`) 기준의
+`새 프로젝트 생성` 사용 예시입니다.
+
+- `ADMIN`
+  - 학기 운영용 공식 프로젝트를 먼저 생성하고 리더를 지정
+  - 예: `2026-1 캡스톤 공통 운영`
+- `LEADER`
+  - 팀 실제 개발 프로젝트를 생성하고 바로 팀원/업무/일정 세팅
+  - 예: `AI 회의록 자동화 플랫폼`
+- `MEMBER`
+  - 정책 허용 시 실험/서브 프로젝트 초안을 생성(권장: 리더 승인 후)
+  - 예: `추천 모델 성능 개선 실험`
+- `MENTOR`
+  - 멘토링 점검용 프로젝트를 생성해 리스크/피드백 중심으로 추적
+  - 예: `멘토링 점검 - 3팀`
+- `PROFESSOR`
+  - 분반/과목 운영 프로젝트를 생성해 발표/평가 흐름을 관리
+  - 예: `2026-1 캡스톤 분반 A 운영`
+- `VIEWER`
+  - 기본 정책: 조회 전용(생성 권한 미부여 권장)
+
+상세 요구사항은 `PROJECT_MANAGEMENT_PRD.md`의
+`5-2 프로젝트 관리`와 `5-9 설정(Settings)` 섹션을 참고하세요.
