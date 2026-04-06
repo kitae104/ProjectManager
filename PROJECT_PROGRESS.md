@@ -185,11 +185,15 @@
   - 검증 완료
     - `backend`: `./gradlew.bat test` 통과
     - `frontend`: `npm run build` 통과
+- Release 준비 진행 중
+  - 프론트 번들 분할 적용(라우트 lazy loading + Vite manualChunks)
+  - 통합 점검 스크립트 추가(`release-check.ps1`)
+  - Release 점검 실행 방법을 `README.md`에 문서화
 
 ## 4. Next TODO
 - Release 준비
-- 전체 기능 통합 테스트 및 버그 수정
-- 성능 최적화(프론트 번들 분할, API 응답 개선)
+- 전체 기능 통합 테스트(실사용 시나리오) 및 버그 수정
+- API 응답/쿼리 성능 추가 점검
 - 운영 배포 환경 점검 및 배포 스크립트 정리
 
 ## 5. Run Notes
