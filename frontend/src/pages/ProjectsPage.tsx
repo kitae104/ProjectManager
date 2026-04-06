@@ -39,6 +39,9 @@ export function ProjectsPage() {
   const [semester, setSemester] = useState('2026-1')
   const [category, setCategory] = useState<ProjectCategory>('DEVELOPMENT')
   const [status, setStatus] = useState<ProjectStatus>('PLANNING')
+  const [keyword, setKeyword] = useState('')
+  const [filterCategory, setFilterCategory] = useState<'ALL' | ProjectCategory>('ALL')
+  const [filterStatus, setFilterStatus] = useState<'ALL' | ProjectStatus>('ALL')
 
   const projectsQuery = useQuery({
     queryKey: ['projects'],
@@ -138,11 +141,62 @@ export function ProjectsPage() {
       </form>
 
       <div className="grid gap-4">
+        <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+          <p className="text-sm font-semibold text-slate-900">검색 / 필터</p>
+          <div className="mt-3 grid gap-2 md:grid-cols-3">
+            <input
+              className="rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-blue-500"
+              placeholder="프로젝트명/설명 검색"
+              value={keyword}
+              onChange={(event) => setKeyword(event.target.value)}
+            />
+            <select
+              className="rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-blue-500"
+              value={filterCategory}
+              onChange={(event) =>
+                setFilterCategory(event.target.value as 'ALL' | ProjectCategory)
+              }
+            >
+              <option value="ALL">전체 카테고리</option>
+              {categoryOptions.map((value) => (
+                <option key={value} value={value}>
+                  {value}
+                </option>
+              ))}
+            </select>
+            <select
+              className="rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-blue-500"
+              value={filterStatus}
+              onChange={(event) =>
+                setFilterStatus(event.target.value as 'ALL' | ProjectStatus)
+              }
+            >
+              <option value="ALL">전체 상태</option>
+              {statusOptions.map((value) => (
+                <option key={value} value={value}>
+                  {value}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+
         {projectsQuery.isLoading && (
           <p className="text-sm text-slate-500">프로젝트 목록을 불러오는 중입니다.</p>
         )}
         {projectsQuery.isSuccess &&
-          projectsQuery.data.data.map((project) => (
+          projectsQuery.data.data
+            .filter((project) => {
+              const searchBase = `${project.title} ${project.description}`.toLowerCase()
+              const byKeyword = keyword.trim()
+                ? searchBase.includes(keyword.trim().toLowerCase())
+                : true
+              const byCategory =
+                filterCategory === 'ALL' ? true : project.category === filterCategory
+              const byStatus = filterStatus === 'ALL' ? true : project.status === filterStatus
+              return byKeyword && byCategory && byStatus
+            })
+            .map((project) => (
             <Link
               key={project.id}
               to={`/projects/${project.id}`}
@@ -160,7 +214,7 @@ export function ProjectsPage() {
                 {project.leaderName ?? '-'}
               </p>
             </Link>
-          ))}
+            ))}
       </div>
     </section>
   )

@@ -2,7 +2,7 @@
 
 ## 1. Current Status
 - Last Updated: 2026-04-06
-- Current Phase: Phase 5 - 일정 / 마일스톤
+- Current Phase: Phase 8 - 고도화
 - Current Phase Status: DONE
 
 ## 2. Phase Progress
@@ -13,9 +13,9 @@
 | Phase 3 | 프로젝트 / 팀원 관리 | DONE |
 | Phase 4 | 업무 관리 | DONE |
 | Phase 5 | 일정 / 마일스톤 | DONE |
-| Phase 6 | 문서 / 회의록 | NOT STARTED |
-| Phase 7 | AI 기능 | NOT STARTED |
-| Phase 8 | 고도화 | NOT STARTED |
+| Phase 6 | 문서 / 회의록 | DONE |
+| Phase 7 | AI 기능 | DONE |
+| Phase 8 | 고도화 | DONE |
 
 ## 3. Completed Work
 - `PROJECT_MANAGEMENT_PRD.md` 전체 검토 완료
@@ -118,13 +118,79 @@
   - 검증 완료
     - `backend`: `./gradlew.bat test` 통과
     - `frontend`: `npm run build` 통과
+- Phase 6 문서/회의록 관리 구현 완료
+  - 문서 도메인/API 구현
+    - `ProjectDocument`, `DocumentType`, `DocumentRepository`
+    - `GET /api/projects/{id}/documents`
+    - `POST /api/projects/{id}/documents`
+    - `GET /api/documents/{documentId}`
+    - `PUT /api/documents/{documentId}`
+    - `DELETE /api/documents/{documentId}`
+  - 회의록 도메인/API 구현
+    - `MeetingNote`, `MeetingNoteRepository`
+    - `GET /api/projects/{id}/meeting-notes`
+    - `POST /api/projects/{id}/meeting-notes`
+    - `GET /api/meeting-notes/{id}`
+    - `PUT /api/meeting-notes/{id}`
+    - `DELETE /api/meeting-notes/{id}`
+  - 프로젝트 삭제 시 연관 document/meeting_note 정리 로직 추가
+  - 프론트 문서/회의록 페이지 연동 완료
+    - `/projects/:projectId/documents` 라우트 연결
+    - `/projects/:projectId/meetings` 라우트 연결
+    - 문서 CRUD 폼/목록 구현
+    - 회의록 CRUD 폼/목록 구현
+  - 프로젝트 상세 페이지에서 문서/회의록 이동 버튼 추가
+  - 검증 완료
+    - `backend`: `./gradlew.bat test` 통과
+    - `frontend`: `npm run build` 통과
+- Phase 7 AI 기능 구현 완료
+  - AI 인사이트 도메인/API 구현
+    - `AIInsight`, `AIInsightType`, `RiskLevel`, `AIInsightRepository`
+    - `POST /api/projects/{id}/ai/summary`
+    - `POST /api/projects/{id}/ai/risk-analysis`
+    - `POST /api/projects/{id}/ai/next-actions`
+    - `POST /api/projects/{id}/ai/weekly-report`
+    - `POST /api/meeting-notes/{id}/ai/summary`
+  - AI 인사이트 생성 서비스 구현
+    - 프로젝트 요약 생성
+    - 회의록 요약 생성
+    - 다음 액션 추천 생성
+    - 지연 위험 분석 생성
+    - 주간 보고서 초안 생성
+  - 프로젝트 삭제 시 연관 AI 인사이트 정리 로직 추가
+  - 프론트 AI 인사이트 페이지 연동 완료
+    - `/projects/:projectId/ai` 라우트 연결
+    - 기능별 생성 버튼 및 결과 표시 UI
+    - 회의록 선택 기반 요약 생성 UI
+  - 프로젝트 상세 페이지에서 AI 인사이트 이동 버튼 추가
+  - 검증 완료
+    - `backend`: `./gradlew.bat test` 통과
+    - `frontend`: `npm run build` 통과
+- Phase 8 고도화 구현 완료
+  - 파일 업로드(산출물) 기능 구현
+    - `Artifact` 도메인 및 업로드/목록/다운로드/삭제 API 구현
+    - `/projects/:projectId/documents` 페이지에 산출물 업로드/다운로드/삭제 UI 연동
+  - 알림 기능(대시보드형) 추가
+    - 상단 헤더에 알림 패널 추가
+    - 블로킹 업무, 마감 임박/초과 업무 자동 탐지 알림 표시
+  - 검색/필터 강화
+    - 프로젝트 목록 검색(제목/설명) + 카테고리/상태 필터
+    - 칸반 보드 검색 + 담당자/상태 필터
+  - 통계 대시보드 강화
+    - 전체/진행중/지연 프로젝트, 이번 주 마감 업무 지표 카드
+    - 프로젝트 상태 분포 차트, 팀원별 업무 분포 차트 추가
+  - 다크 모드 개선
+    - UI 상태 저장(persist) 기반 테마 토글 추가
+    - 전역 다크 모드 스타일 오버라이드 적용
+  - 검증 완료
+    - `backend`: `./gradlew.bat test` 통과
+    - `frontend`: `npm run build` 통과
 
 ## 4. Next TODO
-- Phase 6 시작: 문서 / 회의록 도메인 설계
-- 문서 CRUD API 구현
-- 회의록 CRUD API 구현
-- `/projects/:projectId/documents`, `/projects/:projectId/meetings` UI/API 연동
-- 활동 로그(ActivityLog) 기본 연동 준비
+- Release 준비
+- 전체 기능 통합 테스트 및 버그 수정
+- 성능 최적화(프론트 번들 분할, API 응답 개선)
+- 운영 배포 환경 점검 및 배포 스크립트 정리
 
 ## 5. Run Notes
 - 로컬 실행 기반(비컨테이너) 개발 원칙 준수
@@ -169,3 +235,26 @@
   - `POST /api/projects/{id}/schedules`
   - `PUT /api/schedules/{scheduleId}`
   - `DELETE /api/schedules/{scheduleId}`
+- Document API 확인:
+  - `GET /api/projects/{id}/documents`
+  - `POST /api/projects/{id}/documents`
+  - `GET /api/documents/{documentId}`
+  - `PUT /api/documents/{documentId}`
+  - `DELETE /api/documents/{documentId}`
+- Meeting Note API 확인:
+  - `GET /api/projects/{id}/meeting-notes`
+  - `POST /api/projects/{id}/meeting-notes`
+  - `GET /api/meeting-notes/{id}`
+  - `PUT /api/meeting-notes/{id}`
+  - `DELETE /api/meeting-notes/{id}`
+- AI API 확인:
+  - `POST /api/projects/{id}/ai/summary`
+  - `POST /api/projects/{id}/ai/risk-analysis`
+  - `POST /api/projects/{id}/ai/next-actions`
+  - `POST /api/projects/{id}/ai/weekly-report`
+  - `POST /api/meeting-notes/{id}/ai/summary`
+- Artifact API 확인:
+  - `GET /api/projects/{id}/artifacts`
+  - `POST /api/projects/{id}/artifacts` (multipart/form-data, `file`)
+  - `GET /api/artifacts/{artifactId}/download`
+  - `DELETE /api/artifacts/{artifactId}`

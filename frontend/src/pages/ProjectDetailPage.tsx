@@ -139,7 +139,7 @@ export function ProjectDetailPage() {
     <section className="space-y-6">
       <div className="flex items-center justify-between rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
         <h2 className="text-xl font-bold text-slate-900">프로젝트 상세</h2>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           <button
             type="button"
             className="rounded-lg border border-blue-300 px-4 py-2 text-sm font-semibold text-blue-700 hover:bg-blue-50"
@@ -153,6 +153,27 @@ export function ProjectDetailPage() {
             onClick={() => navigate(`/projects/${numericProjectId}/calendar`)}
           >
             캘린더 이동
+          </button>
+          <button
+            type="button"
+            className="rounded-lg border border-violet-300 px-4 py-2 text-sm font-semibold text-violet-700 hover:bg-violet-50"
+            onClick={() => navigate(`/projects/${numericProjectId}/documents`)}
+          >
+            문서 이동
+          </button>
+          <button
+            type="button"
+            className="rounded-lg border border-amber-300 px-4 py-2 text-sm font-semibold text-amber-700 hover:bg-amber-50"
+            onClick={() => navigate(`/projects/${numericProjectId}/meetings`)}
+          >
+            회의록 이동
+          </button>
+          <button
+            type="button"
+            className="rounded-lg border border-fuchsia-300 px-4 py-2 text-sm font-semibold text-fuchsia-700 hover:bg-fuchsia-50"
+            onClick={() => navigate(`/projects/${numericProjectId}/ai`)}
+          >
+            AI 인사이트 이동
           </button>
         </div>
       </div>

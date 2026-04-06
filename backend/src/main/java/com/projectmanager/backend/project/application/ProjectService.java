@@ -1,5 +1,7 @@
 package com.projectmanager.backend.project.application;
 
+import com.projectmanager.backend.ai.domain.AIInsightRepository;
+import com.projectmanager.backend.artifact.domain.ArtifactRepository;
 import com.projectmanager.backend.milestone.domain.MilestoneRepository;
 import com.projectmanager.backend.document.domain.DocumentRepository;
 import com.projectmanager.backend.meetingnote.domain.MeetingNoteRepository;
@@ -28,6 +30,8 @@ public class ProjectService {
 
     private final ProjectRepository projectRepository;
     private final ProjectMemberRepository projectMemberRepository;
+    private final AIInsightRepository aiInsightRepository;
+    private final ArtifactRepository artifactRepository;
     private final DocumentRepository documentRepository;
     private final MeetingNoteRepository meetingNoteRepository;
     private final MilestoneRepository milestoneRepository;
@@ -103,6 +107,8 @@ public class ProjectService {
         if (!projectRepository.existsById(projectId)) {
             throw new IllegalArgumentException("프로젝트를 찾을 수 없습니다.");
         }
+        aiInsightRepository.deleteByProjectId(projectId);
+        artifactRepository.deleteByProjectId(projectId);
         documentRepository.deleteByProjectId(projectId);
         meetingNoteRepository.deleteByProjectId(projectId);
         milestoneRepository.deleteByProjectId(projectId);

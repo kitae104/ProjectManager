@@ -56,6 +56,9 @@ export function TaskBoardPage() {
 
   const [form, setForm] = useState<TaskFormState>(defaultFormState)
   const [selectedTaskId, setSelectedTaskId] = useState<number | null>(null)
+  const [keyword, setKeyword] = useState('')
+  const [filterAssignee, setFilterAssignee] = useState<'ALL' | string>('ALL')
+  const [filterStatus, setFilterStatus] = useState<'ALL' | TaskStatus>('ALL')
 
   const tasksQuery = useQuery({
     queryKey: ['tasks', numericProjectId],
@@ -174,6 +177,15 @@ export function TaskBoardPage() {
 
   const tasks = tasksQuery.data?.data ?? []
   const members = membersQuery.data?.data ?? []
+  const filteredTasks = tasks.filter((task) => {
+    const byKeyword = keyword.trim()
+      ? `${task.title} ${task.description}`.toLowerCase().includes(keyword.trim().toLowerCase())
+      : true
+    const byAssignee =
+      filterAssignee === 'ALL' ? true : String(task.assigneeId ?? '') === filterAssignee
+    const byStatus = filterStatus === 'ALL' ? true : task.status === filterStatus
+    return byKeyword && byAssignee && byStatus
+  })
 
   return (
     <section className="space-y-6">
@@ -308,13 +320,49 @@ export function TaskBoardPage() {
       </form>
 
       <DndContext onDragEnd={handleDragEnd}>
+        <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+          <p className="text-sm font-semibold text-slate-900">보드 필터</p>
+          <div className="mt-3 grid gap-2 md:grid-cols-3">
+            <input
+              className="rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-blue-500"
+              placeholder="업무 제목/설명 검색"
+              value={keyword}
+              onChange={(event) => setKeyword(event.target.value)}
+            />
+            <select
+              className="rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-blue-500"
+              value={filterAssignee}
+              onChange={(event) => setFilterAssignee(event.target.value)}
+            >
+              <option value="ALL">전체 담당자</option>
+              <option value="">담당자 미지정</option>
+              {members.map((member) => (
+                <option key={member.id} value={String(member.userId)}>
+                  {member.name} ({member.projectRole})
+                </option>
+              ))}
+            </select>
+            <select
+              className="rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-blue-500"
+              value={filterStatus}
+              onChange={(event) => setFilterStatus(event.target.value as 'ALL' | TaskStatus)}
+            >
+              <option value="ALL">전체 상태</option>
+              {statusColumns.map((column) => (
+                <option key={column.status} value={column.status}>
+                  {column.status}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
         <div className="grid gap-4 lg:grid-cols-5">
           {statusColumns.map((column) => (
             <KanbanColumn
               key={column.status}
               columnId={`col-${column.status}`}
               title={column.title}
-              tasks={tasks.filter((task) => task.status === column.status)}
+              tasks={filteredTasks.filter((task) => task.status === column.status)}
               onSelectTask={loadTaskToForm}
             />
           ))}
@@ -396,4 +444,3 @@ function TaskCard({ task, onSelect }: { task: Task; onSelect: () => void }) {
     </article>
   )
 }
-

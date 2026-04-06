@@ -19,3 +19,50 @@ body {
   min-width: 320px;
 }
 
+.theme-dark {
+  background-color: #020617;
+  color: #e2e8f0;
+}
+
+.theme-dark .bg-slate-50 {
+  background-color: #020617 !important;
+}
+
+.theme-dark .bg-white {
+  background-color: #0f172a !important;
+}
+
+.theme-dark .border-slate-200,
+.theme-dark .border-slate-300 {
+  border-color: #334155 !important;
+}
+
+.theme-dark .text-slate-900 {
+  color: #f8fafc !important;
+}
+
+.theme-dark .text-slate-800 {
+  color: #e2e8f0 !important;
+}
+
+.theme-dark .text-slate-700,
+.theme-dark .text-slate-600 {
+  color: #cbd5e1 !important;
+}
+
+.theme-dark .text-slate-500,
+.theme-dark .text-slate-400 {
+  color: #94a3b8 !important;
+}
+
+.theme-dark .bg-slate-100 {
+  background-color: #1e293b !important;
+}
+
+.theme-dark input,
+.theme-dark select,
+.theme-dark textarea {
+  background-color: #0b1220;
+  color: #e2e8f0;
+}
+

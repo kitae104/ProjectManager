@@ -4,8 +4,11 @@ import { ProtectedRoute } from '../features/auth/components/ProtectedRoute'
 import { AppLayout } from '../layouts/AppLayout'
 import { AuthPage } from '../pages/AuthPage'
 import { DashboardPage } from '../pages/DashboardPage'
+import { ProjectAiPage } from '../pages/ProjectAiPage'
 import { ProjectCalendarPage } from '../pages/ProjectCalendarPage'
 import { ProjectDetailPage } from '../pages/ProjectDetailPage'
+import { ProjectDocumentsPage } from '../pages/ProjectDocumentsPage'
+import { ProjectMeetingsPage } from '../pages/ProjectMeetingsPage'
 import { ProjectsPage } from '../pages/ProjectsPage'
 import { PlaceholderPage } from '../pages/PlaceholderPage'
 import { TaskBoardPage } from '../pages/TaskBoardPage'
@@ -65,30 +68,15 @@ export const router = createBrowserRouter([
       },
       {
         path: '/projects/:projectId/documents',
-        element: (
-          <PlaceholderPage
-            title="문서"
-            description="문서/회의록 CRUD 및 활동 로그 연결을 구현할 영역입니다."
-          />
-        ),
+        element: <ProjectDocumentsPage />,
       },
       {
         path: '/projects/:projectId/meetings',
-        element: (
-          <PlaceholderPage
-            title="회의록"
-            description="회의록 작성과 AI 요약 기능을 연동할 영역입니다."
-          />
-        ),
+        element: <ProjectMeetingsPage />,
       },
       {
         path: '/projects/:projectId/ai',
-        element: (
-          <PlaceholderPage
-            title="AI 인사이트"
-            description="프로젝트 요약, 위험도 분석, 다음 액션 추천을 제공합니다."
-          />
-        ),
+        element: <ProjectAiPage />,
       },
       {
         path: '/settings',
