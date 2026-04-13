@@ -26,9 +26,6 @@ public class AdminSetting {
     @Column(name = "role_change_approval_required", nullable = false)
     private boolean roleChangeApprovalRequired;
 
-    @Column(name = "viewer_project_creation_allowed", nullable = false)
-    private boolean viewerProjectCreationAllowed;
-
     @Column(name = "cors_security_policy_note", nullable = false, length = 300)
     private String corsSecurityPolicyNote;
 
@@ -51,14 +48,12 @@ public class AdminSetting {
 
     private AdminSetting(
             boolean roleChangeApprovalRequired,
-            boolean viewerProjectCreationAllowed,
             String corsSecurityPolicyNote,
             Integer fileUploadLimitMb,
             String defaultSemester,
             String projectNamingRule
     ) {
         this.roleChangeApprovalRequired = roleChangeApprovalRequired;
-        this.viewerProjectCreationAllowed = viewerProjectCreationAllowed;
         this.corsSecurityPolicyNote = corsSecurityPolicyNote;
         this.fileUploadLimitMb = fileUploadLimitMb;
         this.defaultSemester = defaultSemester;
@@ -68,7 +63,6 @@ public class AdminSetting {
     public static AdminSetting createDefault() {
         return new AdminSetting(
                 true,
-                false,
                 "Production must use explicit CORS allowlist and strict security headers.",
                 20,
                 "2026-1",
@@ -78,14 +72,12 @@ public class AdminSetting {
 
     public void update(
             boolean roleChangeApprovalRequired,
-            boolean viewerProjectCreationAllowed,
             String corsSecurityPolicyNote,
             Integer fileUploadLimitMb,
             String defaultSemester,
             String projectNamingRule
     ) {
         this.roleChangeApprovalRequired = roleChangeApprovalRequired;
-        this.viewerProjectCreationAllowed = viewerProjectCreationAllowed;
         this.corsSecurityPolicyNote = corsSecurityPolicyNote;
         this.fileUploadLimitMb = fileUploadLimitMb;
         this.defaultSemester = defaultSemester;

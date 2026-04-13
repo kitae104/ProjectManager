@@ -4,6 +4,7 @@ import { useMemo, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import { useAuthStore } from '../features/auth/store/useAuthStore'
 import { getProjectMembers } from '../features/projects/api/projectsApi'
+import { getProjectMemberRoleLabel } from '../features/projects/constants/projectMemberRoleLabels'
 import {
   createTask,
   deleteTask,
@@ -274,7 +275,7 @@ export function TaskBoardPage() {
             <option value="">담당자 미지정</option>
             {members.map((member) => (
               <option key={member.id} value={member.userId}>
-                {member.name} ({member.projectRole})
+                {member.name} ({getProjectMemberRoleLabel(member.projectRole)})
               </option>
             ))}
           </select>
@@ -338,7 +339,7 @@ export function TaskBoardPage() {
               <option value="">담당자 미지정</option>
               {members.map((member) => (
                 <option key={member.id} value={String(member.userId)}>
-                  {member.name} ({member.projectRole})
+                  {member.name} ({getProjectMemberRoleLabel(member.projectRole)})
                 </option>
               ))}
             </select>

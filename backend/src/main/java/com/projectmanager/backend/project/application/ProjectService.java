@@ -2,7 +2,6 @@ package com.projectmanager.backend.project.application;
 
 import com.projectmanager.backend.ai.domain.AIInsightRepository;
 import com.projectmanager.backend.artifact.domain.ArtifactRepository;
-import com.projectmanager.backend.auth.security.AuthenticatedUser;
 import com.projectmanager.backend.document.domain.DocumentRepository;
 import com.projectmanager.backend.meetingnote.domain.MeetingNoteRepository;
 import com.projectmanager.backend.milestone.domain.MilestoneRepository;
@@ -17,15 +16,11 @@ import com.projectmanager.backend.project.dto.ProjectMemberResponse;
 import com.projectmanager.backend.project.dto.ProjectResponse;
 import com.projectmanager.backend.project.dto.ProjectUpdateRequest;
 import com.projectmanager.backend.schedule.domain.ScheduleRepository;
-import com.projectmanager.backend.settings.application.SettingsService;
-import com.projectmanager.backend.settings.dto.ProjectCreationPolicyResponse;
 import com.projectmanager.backend.task.domain.TaskRepository;
 import com.projectmanager.backend.user.domain.User;
 import com.projectmanager.backend.user.domain.UserRepository;
-import com.projectmanager.backend.user.domain.UserRole;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
-import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -43,11 +38,9 @@ public class ProjectService {
     private final ScheduleRepository scheduleRepository;
     private final TaskRepository taskRepository;
     private final UserRepository userRepository;
-    private final SettingsService settingsService;
 
     @Transactional
-    public ProjectResponse createProject(ProjectCreateRequest request, AuthenticatedUser actor) {
-        validateProjectCreatePermission(actor);
+    public ProjectResponse createProject(ProjectCreateRequest request) {
         User leader = findLeader(request.leaderId());
 
         Project project = Project.create(
@@ -83,11 +76,6 @@ public class ProjectService {
                 .stream()
                 .map(ProjectResponse::from)
                 .toList();
-    }
-
-    @Transactional(readOnly = true)
-    public ProjectCreationPolicyResponse getViewerProjectCreationPolicy() {
-        return new ProjectCreationPolicyResponse(settingsService.isViewerProjectCreationAllowed());
     }
 
     @Transactional(readOnly = true)
@@ -164,16 +152,6 @@ public class ProjectService {
         ProjectMember member = projectMemberRepository.findByIdAndProjectId(memberId, projectId)
                 .orElseThrow(() -> new IllegalArgumentException("Project member not found."));
         projectMemberRepository.delete(member);
-    }
-
-    private void validateProjectCreatePermission(AuthenticatedUser actor) {
-        if (actor.role() != UserRole.VIEWER) {
-            return;
-        }
-        if (settingsService.isViewerProjectCreationAllowed()) {
-            return;
-        }
-        throw new AccessDeniedException("VIEWER cannot create projects.");
     }
 
     private void ensureProjectExists(Long projectId) {

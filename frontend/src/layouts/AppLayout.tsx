@@ -5,6 +5,7 @@ import {
   getRoleCapability,
   type MenuKey,
 } from '../features/auth/constants/roleCapabilities'
+import { getUserRoleLabel } from '../features/auth/constants/roleLabels'
 import { useAuthStore } from '../features/auth/store/useAuthStore'
 import { getProjects } from '../features/projects/api/projectsApi'
 import { getProjectTasks } from '../features/tasks/api/tasksApi'
@@ -183,7 +184,7 @@ export function AppLayout() {
 
               <div className="text-right">
                 <p className="text-sm font-semibold text-slate-800">{user?.name}</p>
-                <p className="text-xs text-slate-500">{user?.role}</p>
+                <p className="text-xs text-slate-500">{getUserRoleLabel(user?.role)}</p>
               </div>
 
               <button

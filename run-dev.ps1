@@ -1,37 +1,60 @@
 param(
-  [switch]$InstallFrontendDeps
+  [switch]$InstallFrontendDeps,
+  [int]$BackendPort = 8080,
+  [string]$FrontendHost = "localhost",
+  [int]$FrontendPort = 5173
 )
 
-Set-StrictMode -Version Latest
 $ErrorActionPreference = "Stop"
 
-$rootPath = Split-Path -Parent $MyInvocation.MyCommand.Path
-$backendScript = Join-Path $rootPath "run-backend.ps1"
-$frontendScript = Join-Path $rootPath "run-frontend.ps1"
+$projectRoot = Split-Path -Parent $MyInvocation.MyCommand.Path
+$backendDir = Join-Path $projectRoot "backend"
+$frontendDir = Join-Path $projectRoot "frontend"
 
-if (-not (Test-Path -LiteralPath $backendScript)) {
-  throw "run-backend.ps1 not found."
+if (-not (Test-Path (Join-Path $backendDir "gradlew.bat"))) {
+  throw "backend/gradlew.bat not found."
 }
 
-if (-not (Test-Path -LiteralPath $frontendScript)) {
-  throw "run-frontend.ps1 not found."
+if (-not (Test-Path (Join-Path $frontendDir "package.json"))) {
+  throw "frontend/package.json not found."
 }
-
-$frontendArgs = @(
-  "-NoExit",
-  "-ExecutionPolicy", "Bypass",
-  "-File", "`"$frontendScript`""
-)
 
 if ($InstallFrontendDeps) {
-  $frontendArgs += "-InstallDeps"
+  Write-Host "[0/2] Installing frontend dependencies"
+  Push-Location $frontendDir
+  try {
+    npm install
+  } finally {
+    Pop-Location
+  }
 }
 
-Write-Host "Starting backend/frontend in separate PowerShell windows."
-Start-Process -FilePath "powershell" -ArgumentList @(
+$backendCommand = @"
+Set-Location "$backendDir"
+`$env:SERVER_PORT="$BackendPort"
+./gradlew.bat bootRun
+"@
+
+$frontendCommand = @"
+Set-Location "$frontendDir"
+npm run dev -- --host=$FrontendHost --port=$FrontendPort
+"@
+
+Write-Host "[1/2] Starting backend in new PowerShell window"
+Start-Process powershell -ArgumentList @(
   "-NoExit",
-  "-ExecutionPolicy", "Bypass",
-  "-File", "`"$backendScript`""
+  "-Command",
+  $backendCommand
 )
 
-Start-Process -FilePath "powershell" -ArgumentList $frontendArgs
+Write-Host "[2/2] Starting frontend in new PowerShell window"
+Start-Process powershell -ArgumentList @(
+  "-NoExit",
+  "-Command",
+  $frontendCommand
+)
+
+Write-Host ""
+Write-Host "Backend:  http://localhost:$BackendPort/api/health"
+Write-Host "Frontend: http://localhost:$FrontendPort"
+Write-Host "To stop, close each opened PowerShell window (or press Ctrl + C in each)."

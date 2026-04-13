@@ -1,10 +1,7 @@
 export type UserRole =
   | 'ADMIN'
-  | 'PROFESSOR'
-  | 'MENTOR'
   | 'LEADER'
   | 'MEMBER'
-  | 'VIEWER'
 
 export type User = {
   id: number

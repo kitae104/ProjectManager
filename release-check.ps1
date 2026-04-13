@@ -17,4 +17,3 @@ try {
 }
 
 Write-Host "Release check completed successfully."
-

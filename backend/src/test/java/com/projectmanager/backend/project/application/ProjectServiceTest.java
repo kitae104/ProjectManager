@@ -1,11 +1,8 @@
 package com.projectmanager.backend.project.application;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 
-import com.projectmanager.backend.auth.security.AuthenticatedUser;
 import com.projectmanager.backend.project.domain.ProjectCategory;
 import com.projectmanager.backend.project.domain.ProjectMemberRole;
 import com.projectmanager.backend.project.domain.ProjectStatus;
@@ -20,7 +17,6 @@ import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 @SpringBootTest
@@ -69,8 +65,7 @@ class ProjectServiceTest {
         );
 
         ProjectResponse createdProject = projectService.createProject(
-                createRequest,
-                new AuthenticatedUser(leader.getId(), leader.getEmail(), leader.getRole())
+                createRequest
         );
         assertNotNull(createdProject.id());
         assertEquals(leader.getId(), createdProject.leaderId());
@@ -87,41 +82,4 @@ class ProjectServiceTest {
         assertEquals(2, membersAfterAdd.size());
     }
 
-    @Test
-    void shouldBlockProjectCreationForViewerByDefault() {
-        User viewer = userRepository.save(
-                User.create(
-                        "Viewer",
-                        "viewer-project@example.com",
-                        passwordEncoder.encode("password1234"),
-                        UserRole.VIEWER,
-                        "CS"
-                )
-        );
-
-        ProjectCreateRequest createRequest = new ProjectCreateRequest(
-                "Viewer Trial Project",
-                "This creation should be blocked by default policy.",
-                ProjectCategory.DEVELOPMENT,
-                ProjectStatus.PLANNING,
-                "2026-1",
-                null,
-                null,
-                0,
-                viewer.getId()
-        );
-
-        assertThrows(
-                AccessDeniedException.class,
-                () -> projectService.createProject(
-                        createRequest,
-                        new AuthenticatedUser(viewer.getId(), viewer.getEmail(), viewer.getRole())
-                )
-        );
-    }
-
-    @Test
-    void shouldReturnViewerCreationPolicyDefaultAsFalse() {
-        assertFalse(projectService.getViewerProjectCreationPolicy().viewerProjectCreationAllowed());
-    }
 }

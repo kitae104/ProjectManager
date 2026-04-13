@@ -9,7 +9,6 @@ import com.projectmanager.backend.settings.dto.DisplaySettingResponse;
 import com.projectmanager.backend.settings.dto.DisplaySettingUpdateRequest;
 import com.projectmanager.backend.settings.dto.NotificationSettingResponse;
 import com.projectmanager.backend.settings.dto.NotificationSettingUpdateRequest;
-import com.projectmanager.backend.settings.dto.ProjectCreationPolicyResponse;
 import com.projectmanager.backend.settings.dto.ProjectDefaultSettingResponse;
 import com.projectmanager.backend.settings.dto.ProjectDefaultSettingUpdateRequest;
 import com.projectmanager.backend.settings.dto.SettingsPasswordUpdateRequest;
@@ -96,12 +95,6 @@ public class SettingsController {
                 AuthenticationUtils.extractAuthenticatedUser(authentication)
         );
         return ResponseEntity.ok(ApiResponse.success("Display settings loaded.", response));
-    }
-
-    @GetMapping("/project-create-policy")
-    public ResponseEntity<ApiResponse<ProjectCreationPolicyResponse>> getProjectCreationPolicy() {
-        ProjectCreationPolicyResponse response = settingsService.getProjectCreationPolicy();
-        return ResponseEntity.ok(ApiResponse.success("Project creation policy loaded.", response));
     }
 
     @PutMapping("/display")

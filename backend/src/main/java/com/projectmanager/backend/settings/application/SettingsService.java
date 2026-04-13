@@ -15,7 +15,6 @@ import com.projectmanager.backend.settings.dto.DisplaySettingResponse;
 import com.projectmanager.backend.settings.dto.DisplaySettingUpdateRequest;
 import com.projectmanager.backend.settings.dto.NotificationSettingResponse;
 import com.projectmanager.backend.settings.dto.NotificationSettingUpdateRequest;
-import com.projectmanager.backend.settings.dto.ProjectCreationPolicyResponse;
 import com.projectmanager.backend.settings.dto.ProjectDefaultSettingResponse;
 import com.projectmanager.backend.settings.dto.ProjectDefaultSettingUpdateRequest;
 import com.projectmanager.backend.settings.dto.SettingsPasswordUpdateRequest;
@@ -144,7 +143,6 @@ public class SettingsService {
         AdminSetting setting = getOrCreateAdminSetting();
         setting.update(
                 request.roleChangeApprovalRequired(),
-                request.viewerProjectCreationAllowed(),
                 request.corsSecurityPolicyNote(),
                 request.fileUploadLimitMb(),
                 request.defaultSemester(),
@@ -153,24 +151,10 @@ public class SettingsService {
         return AdminSettingResponse.from(setting);
     }
 
-    @Transactional(readOnly = true)
-    public ProjectCreationPolicyResponse getProjectCreationPolicy() {
-        return new ProjectCreationPolicyResponse(isViewerProjectCreationAllowed());
-    }
-
-    @Transactional(readOnly = true)
-    public boolean isViewerProjectCreationAllowed() {
-        return adminSettingRepository.findFirstByOrderByIdAsc()
-                .map(AdminSetting::isViewerProjectCreationAllowed)
-                .orElse(false);
-    }
-
     private void validateProjectDefaultSettingRole(AuthenticatedUser authenticatedUser) {
         switch (authenticatedUser.role()) {
             case ADMIN:
             case LEADER:
-            case MENTOR:
-            case PROFESSOR:
                 return;
             default:
                 throw new AccessDeniedException("Role does not have access to project default settings.");

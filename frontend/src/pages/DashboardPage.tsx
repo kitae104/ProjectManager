@@ -15,6 +15,7 @@ import {
 import { getHealth } from '../features/health/api/getHealth'
 import { getProjects } from '../features/projects/api/projectsApi'
 import { getProjectTasks } from '../features/tasks/api/tasksApi'
+import { getUserRoleLabel } from '../features/auth/constants/roleLabels'
 
 const PIE_COLORS = ['#2563eb', '#16a34a', '#f59e0b', '#dc2626', '#7c3aed', '#64748b']
 
@@ -134,7 +135,7 @@ export function DashboardPage() {
             <div className="mt-2 text-sm text-slate-700">
               <p>이름: {meQuery.data.data.name}</p>
               <p>이메일: {meQuery.data.data.email}</p>
-              <p>역할: {meQuery.data.data.role}</p>
+              <p>역할: {getUserRoleLabel(meQuery.data.data.role)}</p>
             </div>
           )}
         </div>

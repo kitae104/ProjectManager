@@ -6,6 +6,7 @@ import {
   canRoleCreateProject,
   getRoleCapability,
 } from '../features/auth/constants/roleCapabilities'
+import { getUserRoleLabel } from '../features/auth/constants/roleLabels'
 import { useAuthStore } from '../features/auth/store/useAuthStore'
 import { createProject, getProjects } from '../features/projects/api/projectsApi'
 import type {
@@ -13,7 +14,6 @@ import type {
   ProjectCreateRequest,
   ProjectStatus,
 } from '../features/projects/types/project'
-import { getViewerProjectCreationPolicy } from '../features/settings/api/settingsApi'
 
 const categoryOptions: ProjectCategory[] = [
   'CAPSTONE',
@@ -32,11 +32,27 @@ const statusOptions: ProjectStatus[] = [
   'DELAYED',
 ]
 
+const categoryLabels: Record<ProjectCategory, string> = {
+  CAPSTONE: '캡스톤',
+  STARTUP: '스타트업',
+  AI: 'AI',
+  DEVELOPMENT: '개발',
+  ETC: '기타',
+}
+
+const statusLabels: Record<ProjectStatus, string> = {
+  PLANNING: '기획',
+  IN_PROGRESS: '진행 중',
+  REVIEW: '검토',
+  COMPLETED: '완료',
+  ON_HOLD: '보류',
+  DELAYED: '지연',
+}
+
 export function ProjectsPage() {
   const queryClient = useQueryClient()
   const currentUser = useAuthStore((state) => state.user)
   const roleCapability = getRoleCapability(currentUser?.role)
-  const isViewer = currentUser?.role === 'VIEWER'
 
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
@@ -52,17 +68,7 @@ export function ProjectsPage() {
     queryFn: getProjects,
   })
 
-  const viewerPolicyQuery = useQuery({
-    queryKey: ['viewer-project-creation-policy'],
-    queryFn: getViewerProjectCreationPolicy,
-    enabled: isViewer,
-    staleTime: 1000 * 60,
-  })
-
-  const canCreateProject = canRoleCreateProject(
-    currentUser?.role,
-    viewerPolicyQuery.data?.data.viewerProjectCreationAllowed ?? false,
-  )
+  const canCreateProject = canRoleCreateProject(currentUser?.role)
 
   const createMutation = useMutation({
     mutationFn: (request: ProjectCreateRequest) => createProject(request),
@@ -97,7 +103,7 @@ export function ProjectsPage() {
       <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
         <h2 className="text-xl font-bold text-slate-900">프로젝트</h2>
         <p className="mt-1 text-sm text-slate-600">
-          전체 프로젝트를 조회하고, 새 프로젝트를 생성한 뒤 상세 작업 공간으로 이동할 수 있습니다.
+          전체 프로젝트를 조회하고, 새 프로젝트를 생성하거나 상세 작업 공간으로 이동할 수 있습니다.
         </p>
       </div>
 
@@ -106,7 +112,7 @@ export function ProjectsPage() {
           역할 권한
         </p>
         <p className="mt-2 text-sm text-slate-700">
-          현재 역할: <span className="font-semibold">{currentUser?.role ?? '알 수 없음'}</span>
+          현재 역할: <span className="font-semibold">{getUserRoleLabel(currentUser?.role)}</span>
         </p>
         <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-slate-600">
           {roleCapability.features.map((feature) => (
@@ -143,7 +149,7 @@ export function ProjectsPage() {
             >
               {categoryOptions.map((value) => (
                 <option key={value} value={value}>
-                  {value}
+                  {categoryLabels[value]}
                 </option>
               ))}
             </select>
@@ -154,7 +160,7 @@ export function ProjectsPage() {
             >
               {statusOptions.map((value) => (
                 <option key={value} value={value}>
-                  {value}
+                  {statusLabels[value]}
                 </option>
               ))}
             </select>
@@ -176,31 +182,10 @@ export function ProjectsPage() {
         </form>
       ) : (
         <article className="rounded-2xl border border-amber-200 bg-amber-50 p-6 shadow-sm">
-          <h3 className="text-base font-semibold text-amber-900">프로젝트 생성이 제한되어 있습니다</h3>
-          {!isViewer && (
-            <p className="mt-2 text-sm text-amber-800">
-              현재 역할에는 프로젝트 생성 권한이 없습니다.
-            </p>
-          )}
-          {isViewer && viewerPolicyQuery.isLoading && (
-            <p className="mt-2 text-sm text-amber-800">VIEWER 생성 정책을 확인 중입니다...</p>
-          )}
-          {isViewer && viewerPolicyQuery.isError && (
-            <p className="mt-2 text-sm text-amber-800">
-              VIEWER 정책을 불러오지 못했습니다. 백엔드 정책과 안전하게 맞추기 위해 생성은 차단됩니다.
-            </p>
-          )}
-          {isViewer && viewerPolicyQuery.isSuccess && (
-            <p className="mt-2 text-sm text-amber-800">
-              현재 VIEWER 프로젝트 생성은 관리자 정책에 따라
-              {' '}
-              <span className="font-semibold">
-                {viewerPolicyQuery.data.data.viewerProjectCreationAllowed ? '허용' : '차단'}
-              </span>
-              {' '}
-              상태입니다.
-            </p>
-          )}
+          <h3 className="text-base font-semibold text-amber-900">프로젝트 생성 권한이 없습니다</h3>
+          <p className="mt-2 text-sm text-amber-800">
+            현재 역할에는 프로젝트 생성 권한이 없습니다.
+          </p>
         </article>
       )}
 
@@ -224,7 +209,7 @@ export function ProjectsPage() {
               <option value="ALL">전체 카테고리</option>
               {categoryOptions.map((value) => (
                 <option key={value} value={value}>
-                  {value}
+                  {categoryLabels[value]}
                 </option>
               ))}
             </select>
@@ -238,7 +223,7 @@ export function ProjectsPage() {
               <option value="ALL">전체 상태</option>
               {statusOptions.map((value) => (
                 <option key={value} value={value}>
-                  {value}
+                  {statusLabels[value]}
                 </option>
               ))}
             </select>
@@ -270,12 +255,12 @@ export function ProjectsPage() {
                 <div className="flex items-center justify-between">
                   <h3 className="text-base font-semibold text-slate-900">{project.title}</h3>
                   <span className="rounded-full bg-slate-100 px-2 py-1 text-xs font-semibold text-slate-700">
-                    {project.status}
+                    {statusLabels[project.status]}
                   </span>
                 </div>
                 <p className="mt-2 text-sm text-slate-600">{project.description}</p>
                 <p className="mt-2 text-xs text-slate-500">
-                  카테고리: {project.category} / 진행률: {project.progress}% / 리더:{' '}
+                  카테고리: {categoryLabels[project.category]} / 진행률: {project.progress}% / 리더:{' '}
                   {project.leaderName ?? '-'}
                 </p>
               </Link>

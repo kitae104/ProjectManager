@@ -9,8 +9,6 @@ import jakarta.validation.constraints.Size;
 public record AdminSettingUpdateRequest(
         @NotNull(message = "roleChangeApprovalRequired is required.")
         Boolean roleChangeApprovalRequired,
-        @NotNull(message = "viewerProjectCreationAllowed is required.")
-        Boolean viewerProjectCreationAllowed,
         @NotBlank(message = "corsSecurityPolicyNote is required.")
         @Size(max = 300, message = "corsSecurityPolicyNote must be 300 characters or fewer.")
         String corsSecurityPolicyNote,

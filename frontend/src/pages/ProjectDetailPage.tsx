@@ -9,6 +9,7 @@ import {
   getProjectMembers,
   updateProject,
 } from '../features/projects/api/projectsApi'
+import { getProjectMemberRoleLabel } from '../features/projects/constants/projectMemberRoleLabels'
 import type {
   ProjectCategory,
   ProjectMemberRole,
@@ -280,7 +281,7 @@ export function ProjectDetailPage() {
           >
             {memberRoleOptions.map((value) => (
               <option key={value} value={value}>
-                {value}
+                {getProjectMemberRoleLabel(value)}
               </option>
             ))}
           </select>
@@ -311,7 +312,7 @@ export function ProjectDetailPage() {
               >
                 <div>
                   <p className="text-sm font-semibold text-slate-900">
-                    {member.name} ({member.projectRole})
+                    {member.name} ({getProjectMemberRoleLabel(member.projectRole)})
                   </p>
                   <p className="text-xs text-slate-500">
                     ID: {member.userId} · {member.email} · {member.responsibility ?? '-'}

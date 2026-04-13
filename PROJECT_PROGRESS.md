@@ -1,7 +1,7 @@
 # PROJECT_PROGRESS.md
 
 ## 1. Current Status
-- Last Updated: 2026-04-06
+- Last Updated: 2026-04-13
 - Current Phase: Phase 8 - 고도화
 - Current Phase Status: DONE
 
@@ -185,16 +185,17 @@
   - 검증 완료
     - `backend`: `./gradlew.bat test` 통과
     - `frontend`: `npm run build` 통과
-- Release 준비 진행 중
+- Release 준비 완료
   - 프론트 번들 분할 적용(라우트 lazy loading + Vite manualChunks)
   - 통합 점검 스크립트 추가(`release-check.ps1`)
+  - 릴리즈 패키징 스크립트 추가(`release-package.ps1`)
+  - 백엔드 포함 성능 점검 실행 스크립트 추가(`run-performance-with-backend.ps1`)
   - Release 점검 실행 방법을 `README.md`에 문서화
 
 ## 4. Next TODO
-- Release 준비
 - 전체 기능 통합 테스트(실사용 시나리오) 및 버그 수정
 - API 응답/쿼리 성능 추가 점검
-- 운영 배포 환경 점검 및 배포 스크립트 정리
+- 운영 배포 환경 점검 및 배포 리허설
 
 ## 5. Run Notes
 - 로컬 실행 기반(비컨테이너) 개발 원칙 준수
@@ -262,3 +263,91 @@
   - `POST /api/projects/{id}/artifacts` (multipart/form-data, `file`)
   - `GET /api/artifacts/{artifactId}/download`
   - `DELETE /api/artifacts/{artifactId}`
+
+## 6. Recent Update (2026-04-12)
+- Added backend release smoke API integration test:
+  - `backend/src/test/java/com/projectmanager/backend/release/api/ReleaseSmokeApiTest.java`
+- Covered core API flow in one integration test:
+  - signup/login token issuance
+  - authenticated profile lookup (`/api/auth/me`)
+  - project creation (`/api/projects`)
+  - task creation and status transition (`/api/projects/{id}/tasks`, `/api/tasks/{taskId}/status`)
+- Added role baseline check:
+  - `MEMBER` role-based authenticated flow can create project in core smoke path
+- Validation:
+  - `backend`: `./gradlew.bat test --tests "com.projectmanager.backend.release.api.ReleaseSmokeApiTest"`
+  - `release-check.ps1`: backend tests + frontend build passed
+- Added release packaging automation:
+  - `release-package.ps1` (build + bundle backend jar and frontend dist)
+- Added deployment runbook:
+  - `DEPLOYMENT_CHECKLIST.md`
+- Added extended release integration tests:
+  - `backend/src/test/java/com/projectmanager/backend/release/api/ReleaseExtendedApiTest.java`
+  - covers artifact upload/list/download/delete flow
+  - covers settings API access control and update paths (member/leader/admin)
+  - covers document/meeting-note CRUD and AI insight endpoint flow
+- Added API performance baseline script:
+  - `api-performance-check.ps1`
+- Added one-shot local performance runner:
+  - `run-performance-with-backend.ps1` (starts backend, runs performance check, tears down backend)
+- Performance run status:
+  - local DB credential mismatch (`root` access denied) blocked live API latency measurement in this environment
+  - measurement is executable once valid DB credentials are provided to `run-performance-with-backend.ps1`
+- Fixed performance runner argument binding bug:
+  - replaced array-style argument splatting with named hashtable splatting when calling `api-performance-check.ps1`
+  - resolved `Iterations` parameter conversion error during `run-performance-with-backend.ps1` execution
+
+## 7. Recent Update (2026-04-13)
+- Simplified user role model to 3 roles:
+  - `ADMIN`, `LEADER`, `MEMBER`
+- Updated backend role authorization mapping:
+  - removed `MENTOR`, `PROFESSOR`, `VIEWER` from `UserRole`
+  - aligned settings/project permission checks to new role model
+- Removed deprecated viewer project-creation policy API/DTO usage:
+  - removed `/api/projects/policies/viewer-project-creation`
+  - removed `/api/settings/project-create-policy`
+- Updated admin settings contract:
+  - removed `viewerProjectCreationAllowed` from request/response DTOs
+  - removed deprecated viewer policy contract from settings APIs
+- Added legacy user role normalization at startup:
+  - `MENTOR`/`PROFESSOR` -> `ADMIN`
+  - `VIEWER` -> `MEMBER`
+- Updated frontend role handling:
+  - auth role type and capability matrix aligned to 3 roles
+  - project create page role-policy flow simplified
+  - role labels localized (`관리자`, `팀장`, `팀원`) on dashboard/layout/projects
+- Added DB cleanup migration script:
+  - `backend/sql/migrations/V20260413__drop_admin_settings_viewer_project_creation_allowed.sql`
+  - removes deprecated `admin_settings.viewer_project_creation_allowed` column (idempotent)
+- Removed deprecated DB column mapping from application entity:
+  - `AdminSetting` no longer references `viewer_project_creation_allowed`
+- Expanded role label localization in workspace:
+  - project member role labels (`팀장`, `프론트엔드`, `백엔드`, `디자인` 등) unified in task board and project detail
+- Validation:
+  - `backend`: `./gradlew test` passed
+  - `frontend`: `npm run build` passed
+
+## 8. Recent Update (2026-04-13)
+- Restored missing release automation scripts required by deployment checklist:
+  - `release-check.ps1`
+  - `release-package.ps1`
+  - `run-performance-with-backend.ps1`
+- Verified release packaging output:
+  - `release/bundle-<timestamp>/backend` (jar, `.env.example`)
+  - `release/bundle-<timestamp>/frontend` (`dist`, `.env.example`)
+  - `release-manifest.txt`
+- Fixed PRD markdown structure issues:
+  - closed broken code blocks
+  - completed `실행 방식` section with explicit frontend run steps
+
+## 9. Recent Update (2026-04-13)
+- Added role-based demo scenario integration test:
+  - `backend/src/test/java/com/projectmanager/backend/demo/DemoScenarioApiTest.java`
+  - creates `user1/user2/user3` with password `11112222`
+  - assigns roles `ADMIN/LEADER/MEMBER`
+  - seeds sample projects, members, tasks, milestones, schedules, documents, meeting notes, and AI insights
+  - exports execution snapshot JSON report:
+    - `backend/build/reports/demo/demo-scenario-summary.json`
+- Added one-command runner:
+  - `run-demo-scenario.ps1`
+  - runs the demo test and prints the generated JSON summary

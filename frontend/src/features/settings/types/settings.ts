@@ -44,13 +44,8 @@ export type ProjectDefaultSettings = {
 
 export type AdminSettings = {
   roleChangeApprovalRequired: boolean
-  viewerProjectCreationAllowed: boolean
   corsSecurityPolicyNote: string
   fileUploadLimitMb: number
   defaultSemester: string
   projectNamingRule: string
-}
-
-export type ProjectCreationPolicy = {
-  viewerProjectCreationAllowed: boolean
 }

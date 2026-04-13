@@ -1,17 +1,14 @@
 package com.projectmanager.backend.project.api;
 
-import com.projectmanager.backend.auth.security.AuthenticationUtils;
 import com.projectmanager.backend.common.response.ApiResponse;
 import com.projectmanager.backend.project.application.ProjectService;
 import com.projectmanager.backend.project.dto.ProjectCreateRequest;
 import com.projectmanager.backend.project.dto.ProjectResponse;
 import com.projectmanager.backend.project.dto.ProjectUpdateRequest;
-import com.projectmanager.backend.settings.dto.ProjectCreationPolicyResponse;
 import jakarta.validation.Valid;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -34,21 +31,11 @@ public class ProjectController {
         return ResponseEntity.ok(ApiResponse.success("Project list loaded.", response));
     }
 
-    @GetMapping("/policies/viewer-project-creation")
-    public ResponseEntity<ApiResponse<ProjectCreationPolicyResponse>> getViewerProjectCreationPolicy() {
-        ProjectCreationPolicyResponse response = projectService.getViewerProjectCreationPolicy();
-        return ResponseEntity.ok(ApiResponse.success("Viewer project creation policy loaded.", response));
-    }
-
     @PostMapping
     public ResponseEntity<ApiResponse<ProjectResponse>> createProject(
-            Authentication authentication,
             @Valid @RequestBody ProjectCreateRequest request
     ) {
-        ProjectResponse response = projectService.createProject(
-                request,
-                AuthenticationUtils.extractAuthenticatedUser(authentication)
-        );
+        ProjectResponse response = projectService.createProject(request);
         return ResponseEntity.ok(ApiResponse.success("Project created.", response));
     }
 

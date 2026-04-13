@@ -1,22 +1,21 @@
-Set-StrictMode -Version Latest
+param(
+  [int]$Port = 8080
+)
+
 $ErrorActionPreference = "Stop"
 
-$rootPath = Split-Path -Parent $MyInvocation.MyCommand.Path
-$backendPath = Join-Path $rootPath "backend"
-$gradleWrapper = Join-Path $backendPath "gradlew.bat"
+$projectRoot = Split-Path -Parent $MyInvocation.MyCommand.Path
+$backendDir = Join-Path $projectRoot "backend"
 
-if (-not (Test-Path -LiteralPath $backendPath)) {
-  throw "Backend directory not found: $backendPath"
+if (-not (Test-Path (Join-Path $backendDir "gradlew.bat"))) {
+  throw "backend/gradlew.bat not found."
 }
 
-if (-not (Test-Path -LiteralPath $gradleWrapper)) {
-  throw "Gradle Wrapper not found: $gradleWrapper"
-}
-
-Write-Host "Starting backend: $backendPath"
-Push-Location $backendPath
+Push-Location $backendDir
 try {
-  & .\gradlew.bat bootRun
+  $env:SERVER_PORT = "$Port"
+  Write-Host "Starting backend on port $Port"
+  .\gradlew.bat bootRun
 } finally {
   Pop-Location
 }
