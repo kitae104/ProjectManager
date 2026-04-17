@@ -3,8 +3,12 @@ package com.projectmanager.backend.task.application;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
+import com.projectmanager.backend.auth.security.AuthenticatedUser;
 import com.projectmanager.backend.project.domain.Project;
 import com.projectmanager.backend.project.domain.ProjectCategory;
+import com.projectmanager.backend.project.domain.ProjectMember;
+import com.projectmanager.backend.project.domain.ProjectMemberRepository;
+import com.projectmanager.backend.project.domain.ProjectMemberRole;
 import com.projectmanager.backend.project.domain.ProjectRepository;
 import com.projectmanager.backend.project.domain.ProjectStatus;
 import com.projectmanager.backend.task.domain.TaskPriority;
@@ -30,6 +34,9 @@ class TaskServiceTest {
     private ProjectRepository projectRepository;
 
     @Autowired
+    private ProjectMemberRepository projectMemberRepository;
+
+    @Autowired
     private UserRepository userRepository;
 
     @Autowired
@@ -37,12 +44,12 @@ class TaskServiceTest {
 
     @Test
     void shouldCreateTaskAndUpdateStatus() {
-        User reporter = userRepository.save(
+        User leader = userRepository.save(
                 User.create(
-                        "Reporter",
-                        "task-reporter@example.com",
+                        "Leader",
+                        "task-leader@example.com",
                         passwordEncoder.encode("password1234"),
-                        UserRole.MEMBER,
+                        UserRole.LEADER,
                         "CS"
                 )
         );
@@ -67,8 +74,14 @@ class TaskServiceTest {
                         null,
                         null,
                         10,
-                        reporter
+                        leader
                 )
+        );
+        projectMemberRepository.save(
+                ProjectMember.create(project, leader, ProjectMemberRole.LEADER, "팀장")
+        );
+        projectMemberRepository.save(
+                ProjectMember.create(project, assignee, ProjectMemberRole.BACKEND, "구현 담당")
         );
 
         TaskCreateRequest createRequest = new TaskCreateRequest(
@@ -77,13 +90,19 @@ class TaskServiceTest {
                 TaskStatus.TODO,
                 TaskPriority.HIGH,
                 assignee.getId(),
-                reporter.getId(),
+                leader.getId(),
                 null,
                 null,
                 0
         );
 
-        TaskResponse createdTask = taskService.createTask(project.getId(), createRequest, reporter.getId());
+        AuthenticatedUser leaderAuth = new AuthenticatedUser(
+                leader.getId(),
+                leader.getEmail(),
+                leader.getRole()
+        );
+
+        TaskResponse createdTask = taskService.createTask(project.getId(), createRequest, leaderAuth);
         assertNotNull(createdTask.id());
         assertEquals(TaskStatus.TODO, createdTask.status());
         assertEquals(TaskPriority.HIGH, createdTask.priority());
@@ -91,9 +110,9 @@ class TaskServiceTest {
 
         TaskResponse updatedStatusTask = taskService.updateTaskStatus(
                 createdTask.id(),
-                new TaskStatusUpdateRequest(TaskStatus.IN_PROGRESS)
+                new TaskStatusUpdateRequest(TaskStatus.IN_PROGRESS),
+                leaderAuth
         );
         assertEquals(TaskStatus.IN_PROGRESS, updatedStatusTask.status());
     }
 }
-

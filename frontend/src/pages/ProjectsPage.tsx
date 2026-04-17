@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import type { FormEvent } from 'react'
 import { Link } from 'react-router-dom'
 import {
@@ -9,6 +9,7 @@ import {
 import { getUserRoleLabel } from '../features/auth/constants/roleLabels'
 import { useAuthStore } from '../features/auth/store/useAuthStore'
 import { createProject, getProjects } from '../features/projects/api/projectsApi'
+import { getUsers } from '../features/users/api/usersApi'
 import type {
   ProjectCategory,
   ProjectCreateRequest,
@@ -59,6 +60,7 @@ export function ProjectsPage() {
   const [semester, setSemester] = useState('2026-1')
   const [category, setCategory] = useState<ProjectCategory>('DEVELOPMENT')
   const [status, setStatus] = useState<ProjectStatus>('PLANNING')
+  const [leaderId, setLeaderId] = useState('')
   const [keyword, setKeyword] = useState('')
   const [filterCategory, setFilterCategory] = useState<'ALL' | ProjectCategory>('ALL')
   const [filterStatus, setFilterStatus] = useState<'ALL' | ProjectStatus>('ALL')
@@ -69,6 +71,27 @@ export function ProjectsPage() {
   })
 
   const canCreateProject = canRoleCreateProject(currentUser?.role)
+
+  const usersQuery = useQuery({
+    queryKey: ['users'],
+    queryFn: getUsers,
+    enabled: canCreateProject,
+  })
+
+  const leaderCandidates = (usersQuery.data?.data ?? []).filter((user) => user.role === 'LEADER')
+
+  useEffect(() => {
+    if (!canCreateProject) {
+      return
+    }
+
+    if (leaderCandidates.length === 0) {
+      setLeaderId('')
+      return
+    }
+
+    setLeaderId((prev) => prev || String(leaderCandidates[0].id))
+  }, [canCreateProject, leaderCandidates])
 
   const createMutation = useMutation({
     mutationFn: (request: ProjectCreateRequest) => createProject(request),
@@ -81,7 +104,7 @@ export function ProjectsPage() {
 
   function handleCreateProject(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
-    if (!canCreateProject) {
+    if (!canCreateProject || !leaderId) {
       return
     }
 
@@ -94,7 +117,7 @@ export function ProjectsPage() {
       startDate: null,
       endDate: null,
       progress: 0,
-      leaderId: currentUser?.id ?? null,
+      leaderId: Number(leaderId),
     })
   }
 
@@ -107,19 +130,21 @@ export function ProjectsPage() {
         </p>
       </div>
 
-      <article className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-        <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">
-          역할 권한
-        </p>
-        <p className="mt-2 text-sm text-slate-700">
-          현재 역할: <span className="font-semibold">{getUserRoleLabel(currentUser?.role)}</span>
-        </p>
-        <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-slate-600">
-          {roleCapability.features.map((feature) => (
-            <li key={feature}>{feature}</li>
-          ))}
-        </ul>
-      </article>
+      {currentUser?.role !== 'ADMIN' && (
+        <article className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+          <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">
+            역할 권한
+          </p>
+          <p className="mt-2 text-sm text-slate-700">
+            현재 역할: <span className="font-semibold">{getUserRoleLabel(currentUser?.role)}</span>
+          </p>
+          <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-slate-600">
+            {roleCapability.features.map((feature) => (
+              <li key={feature}>{feature}</li>
+            ))}
+          </ul>
+        </article>
+      )}
 
       {canCreateProject ? (
         <form
@@ -127,55 +152,107 @@ export function ProjectsPage() {
           onSubmit={handleCreateProject}
         >
           <h3 className="text-base font-semibold text-slate-900">새 프로젝트 생성</h3>
+          <p className="mt-1 text-sm text-slate-600">
+            관리자만 프로젝트를 만들고 팀장을 지정할 수 있습니다.
+          </p>
           <div className="mt-4 grid gap-3 md:grid-cols-2">
-            <input
-              className="rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-blue-500"
-              placeholder="프로젝트 제목"
-              value={title}
-              onChange={(event) => setTitle(event.target.value)}
-              required
-            />
-            <input
-              className="rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-blue-500"
-              placeholder="학기 (예: 2026-1)"
-              value={semester}
-              onChange={(event) => setSemester(event.target.value)}
-              required
-            />
-            <select
-              className="rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-blue-500"
-              value={category}
-              onChange={(event) => setCategory(event.target.value as ProjectCategory)}
-            >
-              {categoryOptions.map((value) => (
-                <option key={value} value={value}>
-                  {categoryLabels[value]}
-                </option>
-              ))}
-            </select>
-            <select
-              className="rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-blue-500"
-              value={status}
-              onChange={(event) => setStatus(event.target.value as ProjectStatus)}
-            >
-              {statusOptions.map((value) => (
-                <option key={value} value={value}>
-                  {statusLabels[value]}
-                </option>
-              ))}
-            </select>
-            <textarea
-              className="md:col-span-2 min-h-24 rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-blue-500"
-              placeholder="프로젝트 설명"
-              value={description}
-              onChange={(event) => setDescription(event.target.value)}
-              required
-            />
+            <div className="space-y-1">
+              <label htmlFor="project-title" className="text-sm font-medium text-slate-700">
+                프로젝트 제목
+              </label>
+              <input
+                id="project-title"
+                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-blue-500"
+                placeholder="프로젝트 제목"
+                value={title}
+                onChange={(event) => setTitle(event.target.value)}
+                required
+              />
+            </div>
+            <div className="space-y-1">
+              <label htmlFor="project-semester" className="text-sm font-medium text-slate-700">
+                학기
+              </label>
+              <input
+                id="project-semester"
+                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-blue-500"
+                placeholder="학기 (예: 2026-1)"
+                value={semester}
+                onChange={(event) => setSemester(event.target.value)}
+                required
+              />
+            </div>
+            <div className="space-y-1">
+              <label htmlFor="project-leader" className="text-sm font-medium text-slate-700">
+                팀장 지정
+              </label>
+              <select
+                id="project-leader"
+                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-blue-500"
+                value={leaderId}
+                onChange={(event) => setLeaderId(event.target.value)}
+                required
+              >
+                {leaderCandidates.length === 0 && <option value="">팀장 사용자 없음</option>}
+                {leaderCandidates.map((leader) => (
+                  <option key={leader.id} value={leader.id}>
+                    {leader.name} ({leader.email})
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="space-y-1">
+              <label htmlFor="project-category" className="text-sm font-medium text-slate-700">
+                카테고리
+              </label>
+              <select
+                id="project-category"
+                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-blue-500"
+                value={category}
+                onChange={(event) => setCategory(event.target.value as ProjectCategory)}
+              >
+                {categoryOptions.map((value) => (
+                  <option key={value} value={value}>
+                    {categoryLabels[value]}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="space-y-1">
+              <label htmlFor="project-status" className="text-sm font-medium text-slate-700">
+                상태
+              </label>
+              <select
+                id="project-status"
+                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-blue-500"
+                value={status}
+                onChange={(event) => setStatus(event.target.value as ProjectStatus)}
+              >
+                {statusOptions.map((value) => (
+                  <option key={value} value={value}>
+                    {statusLabels[value]}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="md:col-span-2 space-y-1">
+              <label htmlFor="project-description" className="text-sm font-medium text-slate-700">
+                프로젝트 설명
+              </label>
+              <textarea
+                id="project-description"
+                className="min-h-24 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-blue-500"
+                placeholder="프로젝트 설명"
+                value={description}
+                onChange={(event) => setDescription(event.target.value)}
+                required
+              />
+            </div>
           </div>
           <button
             type="submit"
             className="mt-4 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700"
-            disabled={createMutation.isPending}
+            disabled={createMutation.isPending || leaderCandidates.length === 0}
           >
             {createMutation.isPending ? '생성 중...' : '프로젝트 생성'}
           </button>
@@ -184,7 +261,7 @@ export function ProjectsPage() {
         <article className="rounded-2xl border border-amber-200 bg-amber-50 p-6 shadow-sm">
           <h3 className="text-base font-semibold text-amber-900">프로젝트 생성 권한이 없습니다</h3>
           <p className="mt-2 text-sm text-amber-800">
-            현재 역할에는 프로젝트 생성 권한이 없습니다.
+            프로젝트 생성과 팀장 지정은 관리자 권한으로만 가능합니다.
           </p>
         </article>
       )}

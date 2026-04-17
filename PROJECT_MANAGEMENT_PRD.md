@@ -171,51 +171,37 @@ npm run dev
 - LEADER
 - MEMBER
 
+### 역할별 책임
+- ADMIN
+  - 프로젝트 생성 및 팀장(leader) 지정
+  - 전체 프로젝트/리소스 조회(운영 관제)
+- LEADER
+  - 본인이 팀장인 프로젝트 관리
+  - 팀원 추가/역할 지정, Todo/문서/회의록/캘린더 관리
+- MEMBER
+  - 참여 프로젝트 조회
+  - 본인 할당 Todo 일정/진행 상태 업데이트
+
 ---
 
 ## 5-2. 프로젝트 관리
 ### 기능
-- 프로젝트 생성
-- 프로젝트 목록 조회
-- 프로젝트 상세 조회
-- 프로젝트 수정 / 삭제
-- 프로젝트 상태 관리
+- 프로젝트 생성(ADMIN 전용)
+- 프로젝트 생성 시 팀장 지정(leaderId 필수)
+- 프로젝트 목록/상세 조회(권한 범위 내)
+- 프로젝트 수정 / 삭제(해당 프로젝트 LEADER 전용)
+- 프로젝트 상태 관리(해당 프로젝트 LEADER 전용)
 
-### 새 프로젝트 생성: 권한별 사용 예시
-
-#### ADMIN
-- 목적: 학기/트랙 운영 관점에서 공식 프로젝트를 먼저 등록
-- 예시:
-  - 제목: `2026-1 캡스톤 공통 운영`
-  - 카테고리: `CAPSTONE`
-  - 상태: `PLANNING`
-  - 설명: 학기 공통 공지, 평가 일정, 운영 체크리스트를 관리하는 프로젝트
-- 사용 포인트:
-  - 초기에 리더(leaderId) 지정
-  - 팀별 프로젝트 생성 기준(카테고리/네이밍 규칙) 제시
-  - 기존 `MENTOR`/`PROFESSOR`가 담당하던 운영·검토 책임을 포함해 수행
-
-#### LEADER
-- 목적: 실제 팀 프로젝트 생성 및 팀 운영 시작
-- 예시:
-  - 제목: `AI 회의록 자동화 플랫폼`
-  - 카테고리: `AI`
-  - 상태: `PLANNING` 또는 `IN_PROGRESS`
-  - 설명: 팀 목표, MVP 범위, 주요 마일스톤을 포함해 등록
-- 사용 포인트:
-  - 생성 직후 팀원 초대 및 역할 배정
-  - 기본 보드/캘린더/문서 탭 즉시 세팅
-
-#### MEMBER
-- 목적: 팀 내 세부 과제/실험성 서브 프로젝트 제안 및 실행
-- 예시:
-  - 제목: `추천 모델 성능 개선 실험`
-  - 카테고리: `DEVELOPMENT`
-  - 상태: `PLANNING`
-  - 설명: 본 프로젝트와의 연계, 종료 기준, 산출물 명시
-- 사용 포인트:
-  - 리더와 목표/범위를 먼저 정렬한 뒤 생성
-  - 중복 프로젝트 난립 방지를 위해 명확한 범위 작성
+### 프로젝트 생성/관리 정책
+- ADMIN
+  - 학기/트랙 운영 프로젝트를 생성하고 팀장을 지정
+  - 전체 프로젝트를 조회할 수 있으나, 상세 수정/삭제는 하지 않음(조회 전용 관제)
+- LEADER
+  - 본인이 팀장인 프로젝트에 대해서만 수정/삭제/운영
+  - 타 프로젝트는 접근 불가
+- MEMBER
+  - 참여 프로젝트 조회 전용
+  - 프로젝트 자체 수정/삭제 불가
 
 ### 프로젝트 카테고리
 - CAPSTONE
@@ -266,13 +252,18 @@ npm run dev
 
 ## 5-4. 업무(Task) 관리
 ### 기능
-- 업무 생성 / 수정 / 삭제
-- 담당자 지정
-- 우선순위 지정
-- 시작일 / 마감일 지정
-- 상태 변경
+- 업무 생성 / 수정 / 삭제(해당 프로젝트 LEADER)
+- 담당자 지정(해당 프로젝트 팀원 범위)
+- 우선순위 지정(LEADER)
+- 시작일 / 마감일 지정(LEADER + 담당 MEMBER 본인 업무)
+- 상태 변경(LEADER + 담당 MEMBER 본인 업무)
 - 코멘트 기록
 - 업무 진행률 표시
+
+### 권한 정책
+- ADMIN: 조회 전용
+- LEADER: 본인 팀장 프로젝트 Todo 전체 관리
+- MEMBER: 본인에게 할당된 Todo의 일정/진행 상태 업데이트만 허용
 
 ### 업무 상태
 - TODO
@@ -297,10 +288,15 @@ npm run dev
 
 ## 5-5. 일정 / 마일스톤 관리
 ### 기능
-- 마일스톤 생성 / 수정 / 삭제
+- 마일스톤 생성 / 수정 / 삭제(해당 프로젝트 LEADER)
 - 프로젝트 캘린더
 - 주간 / 월간 일정 보기
-- 발표일 / 점검일 / 제출일 관리
+- 발표일 / 점검일 / 제출일 관리(해당 프로젝트 LEADER)
+
+### 권한 정책
+- ADMIN: 조회 전용
+- LEADER: 본인 팀장 프로젝트 캘린더 관리
+- MEMBER: 조회 전용
 
 ### 일정 종류 예시
 - 회의
@@ -314,11 +310,18 @@ npm run dev
 
 ## 5-6. 문서 / 회의록 관리
 ### 기능
-- 문서 생성 / 수정 / 삭제
-- 회의록 작성
+- 문서 생성 / 수정 / 삭제(해당 프로젝트 LEADER)
+- 회의록 작성 / 수정 / 삭제(해당 프로젝트 LEADER)
 - 프로젝트 관련 메모 저장
 - 버전 정보 기록
 - AI 요약 버튼
+- 산출물(파일) 업로드 / 삭제(해당 프로젝트 LEADER)
+- 산출물 다운로드(권한 범위 내 조회 사용자)
+
+### 권한 정책
+- ADMIN: 문서/회의록/산출물 조회 및 다운로드 전용
+- LEADER: 본인 팀장 프로젝트 문서/회의록/산출물 관리
+- MEMBER: 참여 프로젝트 문서/회의록/산출물 조회 및 다운로드 전용
 
 ### 문서 타입
 - 프로젝트 개요
@@ -673,10 +676,19 @@ Spring AI를 활용하여 프로젝트 상태를 해석하고,
 - PUT /api/projects/{id}
 - DELETE /api/projects/{id}
 
+권한 정책:
+- POST: ADMIN 전용
+- GET: ADMIN 전체 / LEADER 본인 리더 프로젝트 / MEMBER 참여 프로젝트
+- PUT, DELETE: 해당 프로젝트 LEADER 전용
+
 ### Project Member API
 - GET /api/projects/{id}/members
 - POST /api/projects/{id}/members
 - DELETE /api/projects/{id}/members/{memberId}
+
+권한 정책:
+- GET: 프로젝트 접근 권한 사용자
+- POST, DELETE: 해당 프로젝트 LEADER 전용
 
 ### Task API
 - GET /api/projects/{id}/tasks
@@ -686,17 +698,30 @@ Spring AI를 활용하여 프로젝트 상태를 해석하고,
 - DELETE /api/tasks/{taskId}
 - PATCH /api/tasks/{taskId}/status
 
+권한 정책:
+- GET: 프로젝트 접근 권한 사용자
+- POST, DELETE: 해당 프로젝트 LEADER 전용
+- PUT, PATCH: LEADER 또는 담당 MEMBER(본인 할당 업무만)
+
 ### Milestone API
 - GET /api/projects/{id}/milestones
 - POST /api/projects/{id}/milestones
 - PUT /api/milestones/{milestoneId}
 - DELETE /api/milestones/{milestoneId}
 
+권한 정책:
+- GET: 프로젝트 접근 권한 사용자
+- POST, PUT, DELETE: 해당 프로젝트 LEADER 전용
+
 ### Schedule API
 - GET /api/projects/{id}/schedules
 - POST /api/projects/{id}/schedules
 - PUT /api/schedules/{scheduleId}
 - DELETE /api/schedules/{scheduleId}
+
+권한 정책:
+- GET: 프로젝트 접근 권한 사용자
+- POST, PUT, DELETE: 해당 프로젝트 LEADER 전용
 
 ### Document API
 - GET /api/projects/{id}/documents
@@ -705,12 +730,20 @@ Spring AI를 활용하여 프로젝트 상태를 해석하고,
 - PUT /api/documents/{documentId}
 - DELETE /api/documents/{documentId}
 
+권한 정책:
+- GET: 프로젝트 접근 권한 사용자
+- POST, PUT, DELETE: 해당 프로젝트 LEADER 전용
+
 ### Meeting Note API
 - GET /api/projects/{id}/meeting-notes
 - POST /api/projects/{id}/meeting-notes
 - GET /api/meeting-notes/{id}
 - PUT /api/meeting-notes/{id}
 - DELETE /api/meeting-notes/{id}
+
+권한 정책:
+- GET: 프로젝트 접근 권한 사용자
+- POST, PUT, DELETE: 해당 프로젝트 LEADER 전용
 
 ### Feedback API
 - GET /api/projects/{id}/feedbacks
@@ -802,14 +835,22 @@ src/
 
 ## 10. 대시보드 구성
 
-### 메인 대시보드 카드
-- 전체 프로젝트 수
-- 진행 중 프로젝트 수
-- 지연 프로젝트 수
-- 이번 주 마감 업무 수
-- 최근 활동
-- 위험 프로젝트 알림
-- 내 업무 현황
+### 역할별 대시보드
+- ADMIN 대시보드
+  - 전체 프로젝트 수
+  - 진행 중/지연 프로젝트 수
+  - 이번 주 마감 업무 수
+  - 전체 상태 분포/리스크 관제
+- LEADER 대시보드
+  - 내 프로젝트 수
+  - 관리 중 팀원 수
+  - 블로킹/마감 임박 업무
+  - 팀 업무 분포
+- MEMBER 대시보드
+  - 내 할당 업무 수
+  - 내 진행 중/완료 업무 수
+  - 내 마감 예정 업무
+  - 내 업무 상태 분포
 
 ### 시각화 요소
 - 프로젝트 상태 분포 차트

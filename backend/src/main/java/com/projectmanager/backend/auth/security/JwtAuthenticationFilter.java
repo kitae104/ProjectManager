@@ -2,6 +2,8 @@ package com.projectmanager.backend.auth.security;
 
 import com.projectmanager.backend.auth.jwt.JwtClaims;
 import com.projectmanager.backend.auth.jwt.JwtTokenProvider;
+import com.projectmanager.backend.user.domain.User;
+import com.projectmanager.backend.user.domain.UserRepository;
 import java.io.IOException;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -22,6 +24,7 @@ import jakarta.servlet.http.HttpServletResponse;
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtTokenProvider jwtTokenProvider;
+    private final UserRepository userRepository;
 
     @Override
     protected void doFilterInternal(
@@ -34,9 +37,16 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         if (token != null) {
             try {
                 JwtClaims claims = jwtTokenProvider.parse(token);
+                User user = userRepository.findById(claims.userId()).orElse(null);
+                if (user == null) {
+                    SecurityContextHolder.clearContext();
+                    filterChain.doFilter(request, response);
+                    return;
+                }
+
                 AuthenticatedUser principal = new AuthenticatedUser(
-                        claims.userId(),
-                        claims.email(),
+                        user.getId(),
+                        user.getEmail(),
                         claims.role()
                 );
 
@@ -63,4 +73,3 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         return authHeader.substring(7);
     }
 }
-

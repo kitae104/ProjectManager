@@ -3,6 +3,7 @@ package com.projectmanager.backend.meetingnote.application;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
+import com.projectmanager.backend.auth.security.AuthenticatedUser;
 import com.projectmanager.backend.meetingnote.dto.MeetingNoteCreateRequest;
 import com.projectmanager.backend.meetingnote.dto.MeetingNoteResponse;
 import com.projectmanager.backend.meetingnote.dto.MeetingNoteUpdateRequest;
@@ -42,7 +43,7 @@ class MeetingNoteServiceTest {
                         "Meeting Author",
                         "meeting-author-" + suffix + "@example.com",
                         passwordEncoder.encode("password1234"),
-                        UserRole.MEMBER,
+                        UserRole.LEADER,
                         "CS"
                 )
         );
@@ -61,6 +62,12 @@ class MeetingNoteServiceTest {
                 )
         );
 
+        AuthenticatedUser authorAuth = new AuthenticatedUser(
+                author.getId(),
+                author.getEmail(),
+                author.getRole()
+        );
+
         MeetingNoteResponse created = meetingNoteService.createMeetingNote(
                 project.getId(),
                 new MeetingNoteCreateRequest(
@@ -70,7 +77,7 @@ class MeetingNoteServiceTest {
                         "진행 상황 공유 및 이슈 점검",
                         "이번 주 핵심 이슈 2건 정리"
                 ),
-                author.getId()
+                authorAuth
         );
 
         assertNotNull(created.id());
@@ -85,11 +92,10 @@ class MeetingNoteServiceTest {
                         "일정 조정 및 우선순위 재정의",
                         "다음 주 액션 아이템 확정"
                 ),
-                author.getId()
+                authorAuth
         );
 
         assertEquals("주간 회의(수정)", updated.title());
         assertEquals(LocalDateTime.of(2026, 5, 8, 10, 0), updated.meetingDateTime());
     }
 }
-

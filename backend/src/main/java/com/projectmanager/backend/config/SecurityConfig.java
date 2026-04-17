@@ -50,7 +50,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/settings/project-defaults", "/api/settings/project-defaults/**")
                         .hasAnyRole("ADMIN", "LEADER")
                         .requestMatchers("/api/settings/**").authenticated()
-                        .requestMatchers("/api/users", "/api/users/*").hasRole("ADMIN")
+                        .requestMatchers("/api/users", "/api/users/*").hasAnyRole("ADMIN", "LEADER")
                         .anyRequest().authenticated())
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
                 .build();

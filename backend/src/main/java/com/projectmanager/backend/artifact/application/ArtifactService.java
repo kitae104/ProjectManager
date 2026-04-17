@@ -1,10 +1,11 @@
 package com.projectmanager.backend.artifact.application;
 
+import com.projectmanager.backend.auth.security.AuthenticatedUser;
 import com.projectmanager.backend.artifact.domain.Artifact;
 import com.projectmanager.backend.artifact.domain.ArtifactRepository;
 import com.projectmanager.backend.artifact.dto.ArtifactResponse;
+import com.projectmanager.backend.project.application.ProjectAccessService;
 import com.projectmanager.backend.project.domain.Project;
-import com.projectmanager.backend.project.domain.ProjectRepository;
 import com.projectmanager.backend.user.domain.User;
 import com.projectmanager.backend.user.domain.UserRepository;
 import java.io.IOException;
@@ -21,12 +22,14 @@ public class ArtifactService {
     private static final long MAX_FILE_SIZE_BYTES = 20L * 1024 * 1024;
 
     private final ArtifactRepository artifactRepository;
-    private final ProjectRepository projectRepository;
+    private final ProjectAccessService projectAccessService;
     private final UserRepository userRepository;
 
     @Transactional(readOnly = true)
-    public List<ArtifactResponse> getProjectArtifacts(Long projectId) {
-        ensureProjectExists(projectId);
+    public List<ArtifactResponse> getProjectArtifacts(Long projectId, AuthenticatedUser authenticatedUser) {
+        Project project = projectAccessService.findProject(projectId);
+        projectAccessService.validateCanViewProject(authenticatedUser, project);
+
         return artifactRepository.findByProjectIdOrderByCreatedAtDesc(projectId)
                 .stream()
                 .map(ArtifactResponse::from)
@@ -34,9 +37,14 @@ public class ArtifactService {
     }
 
     @Transactional
-    public ArtifactResponse uploadArtifact(Long projectId, MultipartFile file, Long userId) {
-        Project project = findProject(projectId);
-        User uploader = findUser(userId);
+    public ArtifactResponse uploadArtifact(
+            Long projectId,
+            MultipartFile file,
+            AuthenticatedUser authenticatedUser
+    ) {
+        Project project = projectAccessService.findProject(projectId);
+        projectAccessService.validateCanManageProject(authenticatedUser, project);
+        User uploader = findUser(authenticatedUser.userId());
         validateUploadFile(file);
 
         byte[] fileBytes;
@@ -59,9 +67,10 @@ public class ArtifactService {
     }
 
     @Transactional(readOnly = true)
-    public ArtifactDownloadResult downloadArtifact(Long artifactId) {
+    public ArtifactDownloadResult downloadArtifact(Long artifactId, AuthenticatedUser authenticatedUser) {
         Artifact artifact = artifactRepository.findById(artifactId)
                 .orElseThrow(() -> new IllegalArgumentException("산출물을 찾을 수 없습니다."));
+        projectAccessService.validateCanViewProject(authenticatedUser, artifact.getProject());
         return new ArtifactDownloadResult(
                 artifact.getOriginalFileName(),
                 artifact.getContentType(),
@@ -70,11 +79,11 @@ public class ArtifactService {
     }
 
     @Transactional
-    public void deleteArtifact(Long artifactId) {
-        if (!artifactRepository.existsById(artifactId)) {
-            throw new IllegalArgumentException("산출물을 찾을 수 없습니다.");
-        }
-        artifactRepository.deleteById(artifactId);
+    public void deleteArtifact(Long artifactId, AuthenticatedUser authenticatedUser) {
+        Artifact artifact = artifactRepository.findById(artifactId)
+                .orElseThrow(() -> new IllegalArgumentException("산출물을 찾을 수 없습니다."));
+        projectAccessService.validateCanManageProject(authenticatedUser, artifact.getProject());
+        artifactRepository.delete(artifact);
     }
 
     private void validateUploadFile(MultipartFile file) {
@@ -84,17 +93,6 @@ public class ArtifactService {
         if (file.getSize() > MAX_FILE_SIZE_BYTES) {
             throw new IllegalArgumentException("파일 크기는 20MB 이하여야 합니다.");
         }
-    }
-
-    private void ensureProjectExists(Long projectId) {
-        if (!projectRepository.existsById(projectId)) {
-            throw new IllegalArgumentException("프로젝트를 찾을 수 없습니다.");
-        }
-    }
-
-    private Project findProject(Long projectId) {
-        return projectRepository.findById(projectId)
-                .orElseThrow(() -> new IllegalArgumentException("프로젝트를 찾을 수 없습니다."));
     }
 
     private User findUser(Long userId) {
@@ -109,4 +107,3 @@ public class ArtifactService {
     ) {
     }
 }
-

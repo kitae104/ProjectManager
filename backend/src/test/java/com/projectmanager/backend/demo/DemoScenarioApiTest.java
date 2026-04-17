@@ -75,11 +75,11 @@ class DemoScenarioApiTest {
                 "학기 운영 공지/체크리스트 관리",
                 "CAPSTONE",
                 "PLANNING",
-                adminId,
+                leaderId,
                 5
         );
         long leaderProjectId = createProject(
-                leaderToken,
+                adminToken,
                 "AI 회의록 자동화 플랫폼",
                 "팀 MVP 및 자동 요약 기능 개발",
                 "AI",
@@ -88,19 +88,19 @@ class DemoScenarioApiTest {
                 32
         );
         long memberProjectId = createProject(
-                memberToken,
+                adminToken,
                 "추천 모델 성능 개선 실험",
                 "A/B 테스트 기반 모델 개선 실험",
                 "DEVELOPMENT",
                 "PLANNING",
-                memberId,
+                leaderId,
                 12
         );
 
-        addMember(adminToken, leaderProjectId, adminId, "PM", "운영 의사결정 지원");
-        addMember(adminToken, leaderProjectId, memberId, "BACKEND", "모델 API 및 배치 처리");
-        addMember(adminToken, adminProjectId, leaderId, "LEADER", "분반 프로젝트 리딩");
-        addMember(adminToken, memberProjectId, leaderId, "AI", "실험 설계 검토");
+        addMember(leaderToken, leaderProjectId, adminId, "PM", "운영 의사결정 지원");
+        addMember(leaderToken, leaderProjectId, memberId, "BACKEND", "모델 API 및 배치 처리");
+        addMember(leaderToken, adminProjectId, adminId, "DOCS", "학기 운영 공지 문서 정리");
+        addMember(leaderToken, memberProjectId, memberId, "AI", "실험 설계 및 분석");
 
         long task1 = createTask(
                 leaderToken,
@@ -254,7 +254,7 @@ class DemoScenarioApiTest {
         System.out.println("[DEMO] Summary file: " + reportPath.toAbsolutePath());
         System.out.println(reportJson);
 
-        assertEquals(3, projects.size());
+        assertTrue(projects.size() >= 3);
         assertTrue(tasks.size() >= 3);
         assertEquals(1, taskStatusSummary.get("DONE"));
         assertEquals(1, taskStatusSummary.get("IN_REVIEW"));

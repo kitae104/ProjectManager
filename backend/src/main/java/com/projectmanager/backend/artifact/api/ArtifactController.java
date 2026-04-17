@@ -31,9 +31,11 @@ public class ArtifactController {
 
     @GetMapping("/api/projects/{id}/artifacts")
     public ResponseEntity<ApiResponse<List<ArtifactResponse>>> getProjectArtifacts(
-            @PathVariable("id") Long projectId
+            @PathVariable("id") Long projectId,
+            Authentication authentication
     ) {
-        List<ArtifactResponse> response = artifactService.getProjectArtifacts(projectId);
+        AuthenticatedUser user = AuthenticationUtils.extractAuthenticatedUser(authentication);
+        List<ArtifactResponse> response = artifactService.getProjectArtifacts(projectId, user);
         return ResponseEntity.ok(ApiResponse.success("산출물 목록을 조회했습니다.", response));
     }
 
@@ -44,15 +46,17 @@ public class ArtifactController {
             Authentication authentication
     ) {
         AuthenticatedUser user = AuthenticationUtils.extractAuthenticatedUser(authentication);
-        ArtifactResponse response = artifactService.uploadArtifact(projectId, file, user.userId());
+        ArtifactResponse response = artifactService.uploadArtifact(projectId, file, user);
         return ResponseEntity.ok(ApiResponse.success("산출물을 업로드했습니다.", response));
     }
 
     @GetMapping("/api/artifacts/{artifactId}/download")
     public ResponseEntity<Resource> downloadArtifact(
-            @PathVariable("artifactId") Long artifactId
+            @PathVariable("artifactId") Long artifactId,
+            Authentication authentication
     ) {
-        ArtifactDownloadResult result = artifactService.downloadArtifact(artifactId);
+        AuthenticatedUser user = AuthenticationUtils.extractAuthenticatedUser(authentication);
+        ArtifactDownloadResult result = artifactService.downloadArtifact(artifactId, user);
         ByteArrayResource resource = new ByteArrayResource(result.fileData());
         String contentType = result.contentType() == null || result.contentType().isBlank()
                 ? MediaType.APPLICATION_OCTET_STREAM_VALUE
@@ -69,10 +73,11 @@ public class ArtifactController {
 
     @DeleteMapping("/api/artifacts/{artifactId}")
     public ResponseEntity<ApiResponse<Void>> deleteArtifact(
-            @PathVariable("artifactId") Long artifactId
+            @PathVariable("artifactId") Long artifactId,
+            Authentication authentication
     ) {
-        artifactService.deleteArtifact(artifactId);
+        AuthenticatedUser user = AuthenticationUtils.extractAuthenticatedUser(authentication);
+        artifactService.deleteArtifact(artifactId, user);
         return ResponseEntity.ok(ApiResponse.success("산출물을 삭제했습니다."));
     }
 }
-

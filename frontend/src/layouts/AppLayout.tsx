@@ -1,6 +1,7 @@
 import { useQueries, useQuery } from '@tanstack/react-query'
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { NavLink, Outlet, useNavigate } from 'react-router-dom'
+import { getMyInfo } from '../features/auth/api/authApi'
 import {
   getRoleCapability,
   type MenuKey,
@@ -23,11 +24,39 @@ export function AppLayout() {
   const theme = useUiStore((state) => state.theme)
   const toggleSidebar = useUiStore((state) => state.toggleSidebar)
   const toggleTheme = useUiStore((state) => state.toggleTheme)
+  const accessToken = useAuthStore((state) => state.accessToken)
   const user = useAuthStore((state) => state.user)
+  const setAuth = useAuthStore((state) => state.setAuth)
   const clearAuth = useAuthStore((state) => state.clearAuth)
   const roleCapability = getRoleCapability(user?.role)
   const navItems = roleCapability.menu.map((menuKey) => navItemsByMenu[menuKey])
   const [notificationOpen, setNotificationOpen] = useState(false)
+
+  const myInfoQuery = useQuery({
+    queryKey: ['auth-me'],
+    queryFn: getMyInfo,
+    enabled: Boolean(accessToken),
+    staleTime: 1000 * 60,
+  })
+
+  useEffect(() => {
+    if (!accessToken || !myInfoQuery.data?.data) {
+      return
+    }
+
+    const me = myInfoQuery.data.data
+    const isSameUser =
+      user?.id === me.id &&
+      user?.name === me.name &&
+      user?.email === me.email &&
+      user?.role === me.role &&
+      user?.department === me.department &&
+      user?.profileImage === me.profileImage
+
+    if (!isSameUser) {
+      setAuth(accessToken, me)
+    }
+  }, [accessToken, myInfoQuery.data, setAuth, user])
 
   const projectsQuery = useQuery({
     queryKey: ['projects'],
@@ -54,6 +83,10 @@ export function AppLayout() {
       }
 
       for (const task of query.data.data) {
+        if (user?.role === 'MEMBER' && task.assigneeId !== user.id) {
+          continue
+        }
+
         if (task.status === 'BLOCKED') {
           items.push({
             id: `blocked-${task.id}`,

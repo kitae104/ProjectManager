@@ -39,8 +39,13 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ApiResponse<Void>> handleAccessDeniedException(
             AccessDeniedException exception
     ) {
+        String message = exception.getMessage();
+        if (message == null || message.isBlank()) {
+            message = "접근 권한이 없습니다.";
+        }
+
         return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                .body(ApiResponse.fail("접근 권한이 없습니다."));
+                .body(ApiResponse.fail(message));
     }
 
     @ExceptionHandler(Exception.class)
@@ -56,4 +61,3 @@ public class GlobalExceptionHandler {
         );
     }
 }
-

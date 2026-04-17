@@ -1,7 +1,7 @@
 # PROJECT_PROGRESS.md
 
 ## 1. Current Status
-- Last Updated: 2026-04-13
+- Last Updated: 2026-04-17
 - Current Phase: Phase 8 - 고도화
 - Current Phase Status: DONE
 
@@ -351,3 +351,26 @@
 - Added one-command runner:
   - `run-demo-scenario.ps1`
   - runs the demo test and prints the generated JSON summary
+
+## 10. Recent Update (2026-04-17)
+- Applied role policy refactor across backend and frontend:
+  - `ADMIN`: project creation + leader assignment + global read visibility
+  - `LEADER`: manage only own leader projects (members/tasks/calendar/documents/meetings/artifacts)
+  - `MEMBER`: read participated projects + update only own assigned task schedule/progress/status
+- Added backend shared access validator:
+  - `ProjectAccessService` for consistent project read/manage checks
+- Hardened service-layer authorization for:
+  - projects/members/tasks
+  - milestones/schedules
+  - documents/meeting-notes/artifacts
+- Updated UI role behavior:
+  - separate dashboard cards/charts by role
+  - project create page: admin-only with explicit leader selector
+  - project detail/team management: leader-only edit actions
+  - task board: member sees/updates own tasks only
+  - document/meeting/calendar pages: admin/member read-only, leader manage
+- Updated integration/unit tests to reflect new policy and new service signatures
+- Updated operating docs to include latest role matrix and dashboard policy (`README.md`, `PROJECT_MANAGEMENT_PRD.md`)
+- Validation:
+  - `backend`: `./gradlew test` passed
+  - `frontend`: `npm run build` passed

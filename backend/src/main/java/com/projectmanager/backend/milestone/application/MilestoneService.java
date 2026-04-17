@@ -1,12 +1,13 @@
 package com.projectmanager.backend.milestone.application;
 
+import com.projectmanager.backend.auth.security.AuthenticatedUser;
 import com.projectmanager.backend.milestone.domain.Milestone;
 import com.projectmanager.backend.milestone.domain.MilestoneRepository;
 import com.projectmanager.backend.milestone.dto.MilestoneCreateRequest;
 import com.projectmanager.backend.milestone.dto.MilestoneResponse;
 import com.projectmanager.backend.milestone.dto.MilestoneUpdateRequest;
+import com.projectmanager.backend.project.application.ProjectAccessService;
 import com.projectmanager.backend.project.domain.Project;
-import com.projectmanager.backend.project.domain.ProjectRepository;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -17,11 +18,16 @@ import org.springframework.transaction.annotation.Transactional;
 public class MilestoneService {
 
     private final MilestoneRepository milestoneRepository;
-    private final ProjectRepository projectRepository;
+    private final ProjectAccessService projectAccessService;
 
     @Transactional(readOnly = true)
-    public List<MilestoneResponse> getProjectMilestones(Long projectId) {
-        ensureProjectExists(projectId);
+    public List<MilestoneResponse> getProjectMilestones(
+            Long projectId,
+            AuthenticatedUser authenticatedUser
+    ) {
+        Project project = projectAccessService.findProject(projectId);
+        projectAccessService.validateCanViewProject(authenticatedUser, project);
+
         return milestoneRepository.findByProjectIdOrderByDueDateAscCreatedAtAsc(projectId)
                 .stream()
                 .map(MilestoneResponse::from)
@@ -29,8 +35,14 @@ public class MilestoneService {
     }
 
     @Transactional
-    public MilestoneResponse createMilestone(Long projectId, MilestoneCreateRequest request) {
-        Project project = findProject(projectId);
+    public MilestoneResponse createMilestone(
+            Long projectId,
+            MilestoneCreateRequest request,
+            AuthenticatedUser authenticatedUser
+    ) {
+        Project project = projectAccessService.findProject(projectId);
+        projectAccessService.validateCanManageProject(authenticatedUser, project);
+
         Milestone milestone = Milestone.create(
                 project,
                 request.title(),
@@ -43,8 +55,14 @@ public class MilestoneService {
     }
 
     @Transactional
-    public MilestoneResponse updateMilestone(Long milestoneId, MilestoneUpdateRequest request) {
+    public MilestoneResponse updateMilestone(
+            Long milestoneId,
+            MilestoneUpdateRequest request,
+            AuthenticatedUser authenticatedUser
+    ) {
         Milestone milestone = findMilestone(milestoneId);
+        projectAccessService.validateCanManageProject(authenticatedUser, milestone.getProject());
+
         milestone.update(
                 request.title(),
                 request.description(),
@@ -55,22 +73,10 @@ public class MilestoneService {
     }
 
     @Transactional
-    public void deleteMilestone(Long milestoneId) {
-        if (!milestoneRepository.existsById(milestoneId)) {
-            throw new IllegalArgumentException("마일스톤을 찾을 수 없습니다.");
-        }
-        milestoneRepository.deleteById(milestoneId);
-    }
-
-    private void ensureProjectExists(Long projectId) {
-        if (!projectRepository.existsById(projectId)) {
-            throw new IllegalArgumentException("프로젝트를 찾을 수 없습니다.");
-        }
-    }
-
-    private Project findProject(Long projectId) {
-        return projectRepository.findById(projectId)
-                .orElseThrow(() -> new IllegalArgumentException("프로젝트를 찾을 수 없습니다."));
+    public void deleteMilestone(Long milestoneId, AuthenticatedUser authenticatedUser) {
+        Milestone milestone = findMilestone(milestoneId);
+        projectAccessService.validateCanManageProject(authenticatedUser, milestone.getProject());
+        milestoneRepository.delete(milestone);
     }
 
     private Milestone findMilestone(Long milestoneId) {
@@ -78,4 +84,3 @@ public class MilestoneService {
                 .orElseThrow(() -> new IllegalArgumentException("마일스톤을 찾을 수 없습니다."));
     }
 }
-

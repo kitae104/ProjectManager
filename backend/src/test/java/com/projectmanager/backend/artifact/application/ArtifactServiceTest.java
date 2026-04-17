@@ -3,6 +3,7 @@ package com.projectmanager.backend.artifact.application;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
+import com.projectmanager.backend.auth.security.AuthenticatedUser;
 import com.projectmanager.backend.artifact.dto.ArtifactResponse;
 import com.projectmanager.backend.project.domain.Project;
 import com.projectmanager.backend.project.domain.ProjectCategory;
@@ -41,7 +42,7 @@ class ArtifactServiceTest {
                         "Artifact Uploader",
                         "artifact-uploader-" + suffix + "@example.com",
                         passwordEncoder.encode("password1234"),
-                        UserRole.MEMBER,
+                        UserRole.LEADER,
                         "CS"
                 )
         );
@@ -67,13 +68,21 @@ class ArtifactServiceTest {
                 "artifact-content".getBytes(StandardCharsets.UTF_8)
         );
 
-        ArtifactResponse uploaded = artifactService.uploadArtifact(project.getId(), file, uploader.getId());
+        AuthenticatedUser uploaderAuth = new AuthenticatedUser(
+                uploader.getId(),
+                uploader.getEmail(),
+                uploader.getRole()
+        );
+
+        ArtifactResponse uploaded = artifactService.uploadArtifact(project.getId(), file, uploaderAuth);
         assertNotNull(uploaded.id());
         assertEquals("result.txt", uploaded.originalFileName());
 
-        ArtifactService.ArtifactDownloadResult downloaded = artifactService.downloadArtifact(uploaded.id());
+        ArtifactService.ArtifactDownloadResult downloaded = artifactService.downloadArtifact(
+                uploaded.id(),
+                uploaderAuth
+        );
         assertEquals("result.txt", downloaded.originalFileName());
         assertEquals("artifact-content", new String(downloaded.fileData(), StandardCharsets.UTF_8));
     }
 }
-

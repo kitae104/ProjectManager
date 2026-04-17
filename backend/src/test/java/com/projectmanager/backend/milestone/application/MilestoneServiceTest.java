@@ -3,6 +3,7 @@ package com.projectmanager.backend.milestone.application;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
+import com.projectmanager.backend.auth.security.AuthenticatedUser;
 import com.projectmanager.backend.milestone.domain.MilestoneStatus;
 import com.projectmanager.backend.milestone.dto.MilestoneCreateRequest;
 import com.projectmanager.backend.milestone.dto.MilestoneResponse;
@@ -62,6 +63,12 @@ class MilestoneServiceTest {
                 )
         );
 
+        AuthenticatedUser leaderAuth = new AuthenticatedUser(
+                leader.getId(),
+                leader.getEmail(),
+                leader.getRole()
+        );
+
         MilestoneResponse created = milestoneService.createMilestone(
                 project.getId(),
                 new MilestoneCreateRequest(
@@ -69,7 +76,8 @@ class MilestoneServiceTest {
                         "중간 발표 자료 초안 완료",
                         LocalDate.of(2026, 5, 10),
                         MilestoneStatus.PLANNED
-                )
+                ),
+                leaderAuth
         );
 
         assertNotNull(created.id());
@@ -82,11 +90,11 @@ class MilestoneServiceTest {
                         "중간 발표 자료 최종본",
                         LocalDate.of(2026, 5, 12),
                         MilestoneStatus.IN_PROGRESS
-                )
+                ),
+                leaderAuth
         );
 
         assertEquals(MilestoneStatus.IN_PROGRESS, updated.status());
         assertEquals(LocalDate.of(2026, 5, 12), updated.dueDate());
     }
 }
-

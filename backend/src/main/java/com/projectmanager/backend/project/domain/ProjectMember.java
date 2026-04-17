@@ -67,5 +67,12 @@ public class ProjectMember {
     ) {
         return new ProjectMember(project, user, projectRole, responsibility);
     }
-}
 
+    public void updateRole(ProjectMemberRole projectRole) {
+        this.projectRole = projectRole;
+    }
+
+    public void updateResponsibility(String responsibility) {
+        this.responsibility = responsibility;
+    }
+}

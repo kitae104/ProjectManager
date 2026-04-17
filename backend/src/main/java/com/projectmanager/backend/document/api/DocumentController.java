@@ -28,9 +28,11 @@ public class DocumentController {
 
     @GetMapping("/api/projects/{id}/documents")
     public ResponseEntity<ApiResponse<List<DocumentResponse>>> getProjectDocuments(
-            @PathVariable("id") Long projectId
+            @PathVariable("id") Long projectId,
+            Authentication authentication
     ) {
-        List<DocumentResponse> response = documentService.getProjectDocuments(projectId);
+        AuthenticatedUser user = AuthenticationUtils.extractAuthenticatedUser(authentication);
+        List<DocumentResponse> response = documentService.getProjectDocuments(projectId, user);
         return ResponseEntity.ok(ApiResponse.success("문서 목록을 조회했습니다.", response));
     }
 
@@ -41,15 +43,17 @@ public class DocumentController {
             Authentication authentication
     ) {
         AuthenticatedUser user = AuthenticationUtils.extractAuthenticatedUser(authentication);
-        DocumentResponse response = documentService.createDocument(projectId, request, user.userId());
+        DocumentResponse response = documentService.createDocument(projectId, request, user);
         return ResponseEntity.ok(ApiResponse.success("문서를 생성했습니다.", response));
     }
 
     @GetMapping("/api/documents/{documentId}")
     public ResponseEntity<ApiResponse<DocumentResponse>> getDocument(
-            @PathVariable("documentId") Long documentId
+            @PathVariable("documentId") Long documentId,
+            Authentication authentication
     ) {
-        DocumentResponse response = documentService.getDocument(documentId);
+        AuthenticatedUser user = AuthenticationUtils.extractAuthenticatedUser(authentication);
+        DocumentResponse response = documentService.getDocument(documentId, user);
         return ResponseEntity.ok(ApiResponse.success("문서 상세를 조회했습니다.", response));
     }
 
@@ -60,16 +64,17 @@ public class DocumentController {
             Authentication authentication
     ) {
         AuthenticatedUser user = AuthenticationUtils.extractAuthenticatedUser(authentication);
-        DocumentResponse response = documentService.updateDocument(documentId, request, user.userId());
+        DocumentResponse response = documentService.updateDocument(documentId, request, user);
         return ResponseEntity.ok(ApiResponse.success("문서를 수정했습니다.", response));
     }
 
     @DeleteMapping("/api/documents/{documentId}")
     public ResponseEntity<ApiResponse<Void>> deleteDocument(
-            @PathVariable("documentId") Long documentId
+            @PathVariable("documentId") Long documentId,
+            Authentication authentication
     ) {
-        documentService.deleteDocument(documentId);
+        AuthenticatedUser user = AuthenticationUtils.extractAuthenticatedUser(authentication);
+        documentService.deleteDocument(documentId, user);
         return ResponseEntity.ok(ApiResponse.success("문서를 삭제했습니다."));
     }
 }
-

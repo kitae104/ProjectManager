@@ -3,6 +3,7 @@ package com.projectmanager.backend.document.application;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
+import com.projectmanager.backend.auth.security.AuthenticatedUser;
 import com.projectmanager.backend.document.domain.DocumentType;
 import com.projectmanager.backend.document.dto.DocumentCreateRequest;
 import com.projectmanager.backend.document.dto.DocumentResponse;
@@ -42,7 +43,7 @@ class DocumentServiceTest {
                         "Document Author",
                         "document-author-" + suffix + "@example.com",
                         passwordEncoder.encode("password1234"),
-                        UserRole.MEMBER,
+                        UserRole.LEADER,
                         "CS"
                 )
         );
@@ -61,6 +62,12 @@ class DocumentServiceTest {
                 )
         );
 
+        AuthenticatedUser authorAuth = new AuthenticatedUser(
+                author.getId(),
+                author.getEmail(),
+                author.getRole()
+        );
+
         DocumentResponse created = documentService.createDocument(
                 project.getId(),
                 new DocumentCreateRequest(
@@ -69,7 +76,7 @@ class DocumentServiceTest {
                         "초기 개요 내용",
                         "v1.0"
                 ),
-                author.getId()
+                authorAuth
         );
 
         assertNotNull(created.id());
@@ -84,11 +91,10 @@ class DocumentServiceTest {
                         "기술 문서 형태로 내용 업데이트",
                         "v1.1"
                 ),
-                author.getId()
+                authorAuth
         );
 
         assertEquals(DocumentType.TECHNICAL_DOC, updated.type());
         assertEquals("v1.1", updated.version());
     }
 }
-

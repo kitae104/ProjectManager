@@ -3,6 +3,7 @@ package com.projectmanager.backend.schedule.application;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
+import com.projectmanager.backend.auth.security.AuthenticatedUser;
 import com.projectmanager.backend.project.domain.Project;
 import com.projectmanager.backend.project.domain.ProjectCategory;
 import com.projectmanager.backend.project.domain.ProjectRepository;
@@ -62,6 +63,12 @@ class ScheduleServiceTest {
                 )
         );
 
+        AuthenticatedUser leaderAuth = new AuthenticatedUser(
+                leader.getId(),
+                leader.getEmail(),
+                leader.getRole()
+        );
+
         ScheduleResponse created = scheduleService.createSchedule(
                 project.getId(),
                 new ScheduleCreateRequest(
@@ -71,7 +78,8 @@ class ScheduleServiceTest {
                         LocalDateTime.of(2026, 5, 3, 14, 0),
                         LocalDateTime.of(2026, 5, 3, 15, 0),
                         "공학관 402호"
-                )
+                ),
+                leaderAuth
         );
 
         assertNotNull(created.id());
@@ -86,11 +94,11 @@ class ScheduleServiceTest {
                         LocalDateTime.of(2026, 5, 4, 15, 0),
                         LocalDateTime.of(2026, 5, 4, 16, 0),
                         "공학관 501호"
-                )
+                ),
+                leaderAuth
         );
 
         assertEquals(ScheduleType.INTERNAL_REVIEW, updated.scheduleType());
         assertEquals(LocalDateTime.of(2026, 5, 4, 15, 0), updated.startDateTime());
     }
 }
-

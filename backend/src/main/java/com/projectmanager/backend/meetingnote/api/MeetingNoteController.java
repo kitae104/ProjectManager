@@ -28,9 +28,11 @@ public class MeetingNoteController {
 
     @GetMapping("/api/projects/{id}/meeting-notes")
     public ResponseEntity<ApiResponse<List<MeetingNoteResponse>>> getProjectMeetingNotes(
-            @PathVariable("id") Long projectId
+            @PathVariable("id") Long projectId,
+            Authentication authentication
     ) {
-        List<MeetingNoteResponse> response = meetingNoteService.getProjectMeetingNotes(projectId);
+        AuthenticatedUser user = AuthenticationUtils.extractAuthenticatedUser(authentication);
+        List<MeetingNoteResponse> response = meetingNoteService.getProjectMeetingNotes(projectId, user);
         return ResponseEntity.ok(ApiResponse.success("회의록 목록을 조회했습니다.", response));
     }
 
@@ -41,15 +43,17 @@ public class MeetingNoteController {
             Authentication authentication
     ) {
         AuthenticatedUser user = AuthenticationUtils.extractAuthenticatedUser(authentication);
-        MeetingNoteResponse response = meetingNoteService.createMeetingNote(projectId, request, user.userId());
+        MeetingNoteResponse response = meetingNoteService.createMeetingNote(projectId, request, user);
         return ResponseEntity.ok(ApiResponse.success("회의록을 생성했습니다.", response));
     }
 
     @GetMapping("/api/meeting-notes/{id}")
     public ResponseEntity<ApiResponse<MeetingNoteResponse>> getMeetingNote(
-            @PathVariable("id") Long meetingNoteId
+            @PathVariable("id") Long meetingNoteId,
+            Authentication authentication
     ) {
-        MeetingNoteResponse response = meetingNoteService.getMeetingNote(meetingNoteId);
+        AuthenticatedUser user = AuthenticationUtils.extractAuthenticatedUser(authentication);
+        MeetingNoteResponse response = meetingNoteService.getMeetingNote(meetingNoteId, user);
         return ResponseEntity.ok(ApiResponse.success("회의록 상세를 조회했습니다.", response));
     }
 
@@ -60,16 +64,17 @@ public class MeetingNoteController {
             Authentication authentication
     ) {
         AuthenticatedUser user = AuthenticationUtils.extractAuthenticatedUser(authentication);
-        MeetingNoteResponse response = meetingNoteService.updateMeetingNote(meetingNoteId, request, user.userId());
+        MeetingNoteResponse response = meetingNoteService.updateMeetingNote(meetingNoteId, request, user);
         return ResponseEntity.ok(ApiResponse.success("회의록을 수정했습니다.", response));
     }
 
     @DeleteMapping("/api/meeting-notes/{id}")
     public ResponseEntity<ApiResponse<Void>> deleteMeetingNote(
-            @PathVariable("id") Long meetingNoteId
+            @PathVariable("id") Long meetingNoteId,
+            Authentication authentication
     ) {
-        meetingNoteService.deleteMeetingNote(meetingNoteId);
+        AuthenticatedUser user = AuthenticationUtils.extractAuthenticatedUser(authentication);
+        meetingNoteService.deleteMeetingNote(meetingNoteId, user);
         return ResponseEntity.ok(ApiResponse.success("회의록을 삭제했습니다."));
     }
 }
-

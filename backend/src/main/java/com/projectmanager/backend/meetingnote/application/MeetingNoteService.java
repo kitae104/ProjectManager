@@ -1,12 +1,13 @@
 package com.projectmanager.backend.meetingnote.application;
 
+import com.projectmanager.backend.auth.security.AuthenticatedUser;
 import com.projectmanager.backend.meetingnote.domain.MeetingNote;
 import com.projectmanager.backend.meetingnote.domain.MeetingNoteRepository;
 import com.projectmanager.backend.meetingnote.dto.MeetingNoteCreateRequest;
 import com.projectmanager.backend.meetingnote.dto.MeetingNoteResponse;
 import com.projectmanager.backend.meetingnote.dto.MeetingNoteUpdateRequest;
+import com.projectmanager.backend.project.application.ProjectAccessService;
 import com.projectmanager.backend.project.domain.Project;
-import com.projectmanager.backend.project.domain.ProjectRepository;
 import com.projectmanager.backend.user.domain.User;
 import com.projectmanager.backend.user.domain.UserRepository;
 import java.util.List;
@@ -19,12 +20,17 @@ import org.springframework.transaction.annotation.Transactional;
 public class MeetingNoteService {
 
     private final MeetingNoteRepository meetingNoteRepository;
-    private final ProjectRepository projectRepository;
+    private final ProjectAccessService projectAccessService;
     private final UserRepository userRepository;
 
     @Transactional(readOnly = true)
-    public List<MeetingNoteResponse> getProjectMeetingNotes(Long projectId) {
-        ensureProjectExists(projectId);
+    public List<MeetingNoteResponse> getProjectMeetingNotes(
+            Long projectId,
+            AuthenticatedUser authenticatedUser
+    ) {
+        Project project = projectAccessService.findProject(projectId);
+        projectAccessService.validateCanViewProject(authenticatedUser, project);
+
         return meetingNoteRepository.findByProjectIdOrderByMeetingDateTimeDesc(projectId)
                 .stream()
                 .map(MeetingNoteResponse::from)
@@ -32,9 +38,14 @@ public class MeetingNoteService {
     }
 
     @Transactional
-    public MeetingNoteResponse createMeetingNote(Long projectId, MeetingNoteCreateRequest request, Long userId) {
-        Project project = findProject(projectId);
-        User author = findUser(userId);
+    public MeetingNoteResponse createMeetingNote(
+            Long projectId,
+            MeetingNoteCreateRequest request,
+            AuthenticatedUser authenticatedUser
+    ) {
+        Project project = projectAccessService.findProject(projectId);
+        projectAccessService.validateCanManageProject(authenticatedUser, project);
+        User author = findUser(authenticatedUser.userId());
 
         MeetingNote note = MeetingNote.create(
                 project,
@@ -50,14 +61,21 @@ public class MeetingNoteService {
     }
 
     @Transactional(readOnly = true)
-    public MeetingNoteResponse getMeetingNote(Long meetingNoteId) {
-        return MeetingNoteResponse.from(findMeetingNote(meetingNoteId));
+    public MeetingNoteResponse getMeetingNote(Long meetingNoteId, AuthenticatedUser authenticatedUser) {
+        MeetingNote note = findMeetingNote(meetingNoteId);
+        projectAccessService.validateCanViewProject(authenticatedUser, note.getProject());
+        return MeetingNoteResponse.from(note);
     }
 
     @Transactional
-    public MeetingNoteResponse updateMeetingNote(Long meetingNoteId, MeetingNoteUpdateRequest request, Long userId) {
+    public MeetingNoteResponse updateMeetingNote(
+            Long meetingNoteId,
+            MeetingNoteUpdateRequest request,
+            AuthenticatedUser authenticatedUser
+    ) {
         MeetingNote note = findMeetingNote(meetingNoteId);
-        User author = findUser(userId);
+        projectAccessService.validateCanManageProject(authenticatedUser, note.getProject());
+        User author = findUser(authenticatedUser.userId());
 
         note.update(
                 request.title(),
@@ -71,22 +89,10 @@ public class MeetingNoteService {
     }
 
     @Transactional
-    public void deleteMeetingNote(Long meetingNoteId) {
-        if (!meetingNoteRepository.existsById(meetingNoteId)) {
-            throw new IllegalArgumentException("회의록을 찾을 수 없습니다.");
-        }
-        meetingNoteRepository.deleteById(meetingNoteId);
-    }
-
-    private void ensureProjectExists(Long projectId) {
-        if (!projectRepository.existsById(projectId)) {
-            throw new IllegalArgumentException("프로젝트를 찾을 수 없습니다.");
-        }
-    }
-
-    private Project findProject(Long projectId) {
-        return projectRepository.findById(projectId)
-                .orElseThrow(() -> new IllegalArgumentException("프로젝트를 찾을 수 없습니다."));
+    public void deleteMeetingNote(Long meetingNoteId, AuthenticatedUser authenticatedUser) {
+        MeetingNote note = findMeetingNote(meetingNoteId);
+        projectAccessService.validateCanManageProject(authenticatedUser, note.getProject());
+        meetingNoteRepository.delete(note);
     }
 
     private MeetingNote findMeetingNote(Long meetingNoteId) {
@@ -99,4 +105,3 @@ public class MeetingNoteService {
                 .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
     }
 }
-

@@ -1,12 +1,13 @@
 package com.projectmanager.backend.document.application;
 
+import com.projectmanager.backend.auth.security.AuthenticatedUser;
 import com.projectmanager.backend.document.domain.DocumentRepository;
 import com.projectmanager.backend.document.domain.ProjectDocument;
 import com.projectmanager.backend.document.dto.DocumentCreateRequest;
 import com.projectmanager.backend.document.dto.DocumentResponse;
 import com.projectmanager.backend.document.dto.DocumentUpdateRequest;
+import com.projectmanager.backend.project.application.ProjectAccessService;
 import com.projectmanager.backend.project.domain.Project;
-import com.projectmanager.backend.project.domain.ProjectRepository;
 import com.projectmanager.backend.user.domain.User;
 import com.projectmanager.backend.user.domain.UserRepository;
 import java.util.List;
@@ -19,12 +20,14 @@ import org.springframework.transaction.annotation.Transactional;
 public class DocumentService {
 
     private final DocumentRepository documentRepository;
-    private final ProjectRepository projectRepository;
+    private final ProjectAccessService projectAccessService;
     private final UserRepository userRepository;
 
     @Transactional(readOnly = true)
-    public List<DocumentResponse> getProjectDocuments(Long projectId) {
-        ensureProjectExists(projectId);
+    public List<DocumentResponse> getProjectDocuments(Long projectId, AuthenticatedUser authenticatedUser) {
+        Project project = projectAccessService.findProject(projectId);
+        projectAccessService.validateCanViewProject(authenticatedUser, project);
+
         return documentRepository.findByProjectIdOrderByUpdatedAtDesc(projectId)
                 .stream()
                 .map(DocumentResponse::from)
@@ -32,9 +35,15 @@ public class DocumentService {
     }
 
     @Transactional
-    public DocumentResponse createDocument(Long projectId, DocumentCreateRequest request, Long userId) {
-        Project project = findProject(projectId);
-        User author = findUser(userId);
+    public DocumentResponse createDocument(
+            Long projectId,
+            DocumentCreateRequest request,
+            AuthenticatedUser authenticatedUser
+    ) {
+        Project project = projectAccessService.findProject(projectId);
+        projectAccessService.validateCanManageProject(authenticatedUser, project);
+        User author = findUser(authenticatedUser.userId());
+
         ProjectDocument document = ProjectDocument.create(
                 project,
                 request.title(),
@@ -48,14 +57,22 @@ public class DocumentService {
     }
 
     @Transactional(readOnly = true)
-    public DocumentResponse getDocument(Long documentId) {
-        return DocumentResponse.from(findDocument(documentId));
+    public DocumentResponse getDocument(Long documentId, AuthenticatedUser authenticatedUser) {
+        ProjectDocument document = findDocument(documentId);
+        projectAccessService.validateCanViewProject(authenticatedUser, document.getProject());
+        return DocumentResponse.from(document);
     }
 
     @Transactional
-    public DocumentResponse updateDocument(Long documentId, DocumentUpdateRequest request, Long userId) {
+    public DocumentResponse updateDocument(
+            Long documentId,
+            DocumentUpdateRequest request,
+            AuthenticatedUser authenticatedUser
+    ) {
         ProjectDocument document = findDocument(documentId);
-        User author = findUser(userId);
+        projectAccessService.validateCanManageProject(authenticatedUser, document.getProject());
+        User author = findUser(authenticatedUser.userId());
+
         document.update(
                 request.title(),
                 request.type(),
@@ -67,22 +84,10 @@ public class DocumentService {
     }
 
     @Transactional
-    public void deleteDocument(Long documentId) {
-        if (!documentRepository.existsById(documentId)) {
-            throw new IllegalArgumentException("문서를 찾을 수 없습니다.");
-        }
-        documentRepository.deleteById(documentId);
-    }
-
-    private void ensureProjectExists(Long projectId) {
-        if (!projectRepository.existsById(projectId)) {
-            throw new IllegalArgumentException("프로젝트를 찾을 수 없습니다.");
-        }
-    }
-
-    private Project findProject(Long projectId) {
-        return projectRepository.findById(projectId)
-                .orElseThrow(() -> new IllegalArgumentException("프로젝트를 찾을 수 없습니다."));
+    public void deleteDocument(Long documentId, AuthenticatedUser authenticatedUser) {
+        ProjectDocument document = findDocument(documentId);
+        projectAccessService.validateCanManageProject(authenticatedUser, document.getProject());
+        documentRepository.delete(document);
     }
 
     private ProjectDocument findDocument(Long documentId) {
@@ -95,4 +100,3 @@ public class DocumentService {
                 .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
     }
 }
-

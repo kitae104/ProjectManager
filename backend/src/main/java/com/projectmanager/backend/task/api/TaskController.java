@@ -31,9 +31,11 @@ public class TaskController {
 
     @GetMapping("/api/projects/{id}/tasks")
     public ResponseEntity<ApiResponse<List<TaskResponse>>> getProjectTasks(
-            @PathVariable("id") Long projectId
+            @PathVariable("id") Long projectId,
+            Authentication authentication
     ) {
-        List<TaskResponse> response = taskService.getProjectTasks(projectId);
+        AuthenticatedUser authenticatedUser = AuthenticationUtils.extractAuthenticatedUser(authentication);
+        List<TaskResponse> response = taskService.getProjectTasks(projectId, authenticatedUser);
         return ResponseEntity.ok(ApiResponse.success("업무 목록을 조회했습니다.", response));
     }
 
@@ -44,15 +46,17 @@ public class TaskController {
             Authentication authentication
     ) {
         AuthenticatedUser authenticatedUser = AuthenticationUtils.extractAuthenticatedUser(authentication);
-        TaskResponse response = taskService.createTask(projectId, request, authenticatedUser.userId());
+        TaskResponse response = taskService.createTask(projectId, request, authenticatedUser);
         return ResponseEntity.ok(ApiResponse.success("업무를 생성했습니다.", response));
     }
 
     @GetMapping("/api/tasks/{taskId}")
     public ResponseEntity<ApiResponse<TaskResponse>> getTask(
-            @PathVariable("taskId") Long taskId
+            @PathVariable("taskId") Long taskId,
+            Authentication authentication
     ) {
-        TaskResponse response = taskService.getTask(taskId);
+        AuthenticatedUser authenticatedUser = AuthenticationUtils.extractAuthenticatedUser(authentication);
+        TaskResponse response = taskService.getTask(taskId, authenticatedUser);
         return ResponseEntity.ok(ApiResponse.success("업무 상세를 조회했습니다.", response));
     }
 
@@ -63,25 +67,28 @@ public class TaskController {
             Authentication authentication
     ) {
         AuthenticatedUser authenticatedUser = AuthenticationUtils.extractAuthenticatedUser(authentication);
-        TaskResponse response = taskService.updateTask(taskId, request, authenticatedUser.userId());
+        TaskResponse response = taskService.updateTask(taskId, request, authenticatedUser);
         return ResponseEntity.ok(ApiResponse.success("업무를 수정했습니다.", response));
     }
 
     @DeleteMapping("/api/tasks/{taskId}")
     public ResponseEntity<ApiResponse<Void>> deleteTask(
-            @PathVariable("taskId") Long taskId
+            @PathVariable("taskId") Long taskId,
+            Authentication authentication
     ) {
-        taskService.deleteTask(taskId);
+        AuthenticatedUser authenticatedUser = AuthenticationUtils.extractAuthenticatedUser(authentication);
+        taskService.deleteTask(taskId, authenticatedUser);
         return ResponseEntity.ok(ApiResponse.success("업무를 삭제했습니다."));
     }
 
     @PatchMapping("/api/tasks/{taskId}/status")
     public ResponseEntity<ApiResponse<TaskResponse>> updateTaskStatus(
             @PathVariable("taskId") Long taskId,
-            @Valid @RequestBody TaskStatusUpdateRequest request
+            @Valid @RequestBody TaskStatusUpdateRequest request,
+            Authentication authentication
     ) {
-        TaskResponse response = taskService.updateTaskStatus(taskId, request);
+        AuthenticatedUser authenticatedUser = AuthenticationUtils.extractAuthenticatedUser(authentication);
+        TaskResponse response = taskService.updateTaskStatus(taskId, request, authenticatedUser);
         return ResponseEntity.ok(ApiResponse.success("업무 상태를 변경했습니다.", response));
     }
 }
-

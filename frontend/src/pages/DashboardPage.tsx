@@ -1,4 +1,3 @@
-import { getMyInfo } from '../features/auth/api/authApi'
 import { useQueries, useQuery } from '@tanstack/react-query'
 import {
   Bar,
@@ -12,10 +11,11 @@ import {
   XAxis,
   YAxis,
 } from 'recharts'
-import { getHealth } from '../features/health/api/getHealth'
-import { getProjects } from '../features/projects/api/projectsApi'
-import { getProjectTasks } from '../features/tasks/api/tasksApi'
+import { getMyInfo } from '../features/auth/api/authApi'
 import { getUserRoleLabel } from '../features/auth/constants/roleLabels'
+import { getHealth } from '../features/health/api/getHealth'
+import { getProjectMembers, getProjects } from '../features/projects/api/projectsApi'
+import { getProjectTasks } from '../features/tasks/api/tasksApi'
 
 const PIE_COLORS = ['#2563eb', '#16a34a', '#f59e0b', '#dc2626', '#7c3aed', '#64748b']
 
@@ -35,6 +35,9 @@ export function DashboardPage() {
     queryFn: getProjects,
   })
 
+  const role = meQuery.data?.data.role
+  const myUserId = meQuery.data?.data.id
+
   const taskQueries = useQueries({
     queries: (projectsQuery.data?.data ?? []).map((project) => ({
       queryKey: ['tasks', project.id],
@@ -43,31 +46,40 @@ export function DashboardPage() {
     })),
   })
 
+  const memberQueries = useQueries({
+    queries: (projectsQuery.data?.data ?? []).map((project) => ({
+      queryKey: ['project-members', project.id],
+      queryFn: () => getProjectMembers(project.id),
+      enabled: projectsQuery.isSuccess && role === 'LEADER',
+    })),
+  })
+
   const projects = projectsQuery.data?.data ?? []
   const allTasks = taskQueries.flatMap((query) => query.data?.data ?? [])
+  const myTasks = allTasks.filter((task) => task.assigneeId === myUserId)
+
   const inProgressProjects = projects.filter(
     (project) => project.status === 'IN_PROGRESS',
   ).length
-  const delayedProjects = projects.filter(
-    (project) => project.status === 'DELAYED',
-  ).length
-  const thisWeekDeadlineTasks = allTasks.filter((task) => {
-    if (!task.dueDate || task.status === 'DONE') {
-      return false
-    }
-    const dueDate = new Date(`${task.dueDate}T00:00:00`)
-    const now = new Date()
-    const diffDays = (dueDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)
-    return diffDays >= 0 && diffDays <= 7
-  }).length
+  const delayedProjects = projects.filter((project) => project.status === 'DELAYED').length
+  const thisWeekDeadlineTasks = allTasks.filter((task) => isDueInDays(task.dueDate, task.status, 7))
+    .length
+  const blockedTasks = allTasks.filter((task) => task.status === 'BLOCKED').length
+  const myInProgressTasks = myTasks.filter((task) => task.status === 'IN_PROGRESS').length
+  const myDoneTasks = myTasks.filter((task) => task.status === 'DONE').length
+  const myDeadlineTasks = myTasks.filter((task) => isDueInDays(task.dueDate, task.status, 7)).length
+  const managedTeamMemberCount = new Set(
+    memberQueries
+      .flatMap((query) => query.data?.data ?? [])
+      .map((member) => member.userId)
+      .filter((userId) => userId !== myUserId),
+  ).size
 
-  const statusDistribution = Object.entries(
-    projects.reduce<Record<string, number>>((acc, project) => {
-      acc[project.status] = (acc[project.status] ?? 0) + 1
-      return acc
-    }, {}),
-  ).map(([status, count]) => ({ status, count }))
-
+  const projectStatusDistribution = toDistribution(
+    projects.map((project) => project.status),
+    'status',
+  )
+  const taskStatusDistribution = toDistribution(allTasks.map((task) => task.status), 'status')
   const memberTaskData = Object.entries(
     allTasks.reduce<Record<string, number>>((acc, task) => {
       const key = task.assigneeName ?? '미지정'
@@ -75,21 +87,53 @@ export function DashboardPage() {
       return acc
     }, {}),
   ).map(([name, count]) => ({ name, count }))
+  const myStatusDistribution = toDistribution(myTasks.map((task) => task.status), 'status')
+  const myUpcomingTasks = myTasks
+    .filter((task) => task.status !== 'DONE' && task.dueDate)
+    .sort((a, b) => (a.dueDate ?? '').localeCompare(b.dueDate ?? ''))
+    .slice(0, 5)
+
+  const dashboardTitle =
+    role === 'ADMIN' ? '관리자 대시보드' : role === 'LEADER' ? '팀장 대시보드' : '팀원 대시보드'
+  const dashboardDescription =
+    role === 'ADMIN'
+      ? '전체 프로젝트를 생성/관제하고 전사 현황을 확인합니다.'
+      : role === 'LEADER'
+        ? '내 프로젝트와 팀 운영 상태를 점검합니다.'
+        : '내 할당 업무의 일정과 진행 상태를 관리합니다.'
 
   return (
     <section className="space-y-4">
       <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-        <h2 className="text-xl font-bold text-slate-900">대시보드</h2>
-        <p className="mt-2 text-sm text-slate-600">
-          인증 상태와 백엔드 연결 상태를 확인합니다.
-        </p>
+        <h2 className="text-xl font-bold text-slate-900">{dashboardTitle}</h2>
+        <p className="mt-2 text-sm text-slate-600">{dashboardDescription}</p>
       </div>
 
       <div className="grid gap-4 md:grid-cols-4">
-        <MetricCard title="전체 프로젝트" value={`${projects.length}`} />
-        <MetricCard title="진행 중 프로젝트" value={`${inProgressProjects}`} />
-        <MetricCard title="지연 프로젝트" value={`${delayedProjects}`} />
-        <MetricCard title="이번 주 마감 업무" value={`${thisWeekDeadlineTasks}`} />
+        {role === 'ADMIN' && (
+          <>
+            <MetricCard title="전체 프로젝트" value={`${projects.length}`} />
+            <MetricCard title="진행 중 프로젝트" value={`${inProgressProjects}`} />
+            <MetricCard title="지연 프로젝트" value={`${delayedProjects}`} />
+            <MetricCard title="이번 주 마감 업무" value={`${thisWeekDeadlineTasks}`} />
+          </>
+        )}
+        {role === 'LEADER' && (
+          <>
+            <MetricCard title="내 프로젝트 수" value={`${projects.length}`} />
+            <MetricCard title="관리 중 팀원 수" value={`${managedTeamMemberCount}`} />
+            <MetricCard title="블로킹 업무" value={`${blockedTasks}`} />
+            <MetricCard title="이번 주 마감 업무" value={`${thisWeekDeadlineTasks}`} />
+          </>
+        )}
+        {role === 'MEMBER' && (
+          <>
+            <MetricCard title="내 전체 업무" value={`${myTasks.length}`} />
+            <MetricCard title="내 진행 중 업무" value={`${myInProgressTasks}`} />
+            <MetricCard title="내 완료 업무" value={`${myDoneTasks}`} />
+            <MetricCard title="내 이번 주 마감" value={`${myDeadlineTasks}`} />
+          </>
+        )}
       </div>
 
       <div className="grid gap-4 md:grid-cols-2">
@@ -97,22 +141,16 @@ export function DashboardPage() {
           <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">
             Backend Health
           </p>
-          {healthQuery.isLoading && (
-            <p className="mt-2 text-sm text-slate-600">헬스체크 조회 중...</p>
-          )}
+          {healthQuery.isLoading && <p className="mt-2 text-sm text-slate-600">헬스체크 조회 중...</p>}
           {healthQuery.isError && (
             <p className="mt-2 text-sm text-red-600">
-              백엔드 연결에 실패했습니다. `VITE_API_BASE_URL` 또는 서버 실행 상태를
-              확인해 주세요.
+              백엔드 연결에 실패했습니다. `VITE_API_BASE_URL` 또는 서버 실행 상태를 확인해 주세요.
             </p>
           )}
           {healthQuery.isSuccess && (
             <div className="mt-2 text-sm text-slate-700">
               <p>
-                상태:{' '}
-                <span className="font-semibold text-emerald-600">
-                  {healthQuery.data.data.status}
-                </span>
+                상태: <span className="font-semibold text-emerald-600">{healthQuery.data.data.status}</span>
               </p>
               <p>서비스: {healthQuery.data.data.service}</p>
             </div>
@@ -120,12 +158,8 @@ export function DashboardPage() {
         </div>
 
         <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-          <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">
-            Auth / Me API
-          </p>
-          {meQuery.isLoading && (
-            <p className="mt-2 text-sm text-slate-600">내 정보 조회 중...</p>
-          )}
+          <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">Auth / Me API</p>
+          {meQuery.isLoading && <p className="mt-2 text-sm text-slate-600">내 정보 조회 중...</p>}
           {meQuery.isError && (
             <p className="mt-2 text-sm text-red-600">
               인증 정보가 유효하지 않습니다. 다시 로그인해 주세요.
@@ -141,43 +175,47 @@ export function DashboardPage() {
         </div>
       </div>
 
-      <div className="grid gap-4 lg:grid-cols-2">
-        <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-          <p className="text-sm font-semibold text-slate-900">프로젝트 상태 분포</p>
-          <div className="mt-4 h-64">
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie
-                  data={statusDistribution}
-                  dataKey="count"
-                  nameKey="status"
-                  outerRadius={90}
-                  label
+      {(role === 'ADMIN' || role === 'LEADER') && (
+        <div className="grid gap-4 lg:grid-cols-2">
+          <ChartCard
+            title={role === 'ADMIN' ? '프로젝트 상태 분포' : '업무 상태 분포'}
+            data={role === 'ADMIN' ? projectStatusDistribution : taskStatusDistribution}
+            dataKey="count"
+            nameKey="status"
+          />
+          <BarCard title="팀원별 업무 분포" data={memberTaskData} />
+        </div>
+      )}
+
+      {role === 'MEMBER' && (
+        <div className="grid gap-4 lg:grid-cols-2">
+          <ChartCard
+            title="내 업무 상태 분포"
+            data={myStatusDistribution}
+            dataKey="count"
+            nameKey="status"
+          />
+          <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+            <p className="text-sm font-semibold text-slate-900">내 마감 예정 업무</p>
+            <div className="mt-3 space-y-2">
+              {myUpcomingTasks.map((task) => (
+                <div
+                  key={task.id}
+                  className="rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-700"
                 >
-                  {statusDistribution.map((entry, index) => (
-                    <Cell key={entry.status} fill={PIE_COLORS[index % PIE_COLORS.length]} />
-                  ))}
-                </Pie>
-                <Tooltip />
-              </PieChart>
-            </ResponsiveContainer>
+                  <p className="font-semibold text-slate-900">{task.title}</p>
+                  <p className="text-xs text-slate-500">
+                    상태: {task.status} · 마감일: {task.dueDate}
+                  </p>
+                </div>
+              ))}
+              {myUpcomingTasks.length === 0 && (
+                <p className="text-sm text-slate-500">예정된 마감 업무가 없습니다.</p>
+              )}
+            </div>
           </div>
         </div>
-        <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-          <p className="text-sm font-semibold text-slate-900">팀원별 업무 분포</p>
-          <div className="mt-4 h-64">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={memberTaskData}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="name" />
-                <YAxis />
-                <Tooltip />
-                <Bar dataKey="count" fill="#2563eb" />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
-      </div>
+      )}
     </section>
   )
 }
@@ -189,4 +227,73 @@ function MetricCard({ title, value }: { title: string; value: string }) {
       <p className="mt-2 text-2xl font-bold text-slate-900">{value}</p>
     </div>
   )
+}
+
+function ChartCard({
+  title,
+  data,
+  dataKey,
+  nameKey,
+}: {
+  title: string
+  data: Array<{ [key: string]: string | number }>
+  dataKey: string
+  nameKey: string
+}) {
+  return (
+    <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+      <p className="text-sm font-semibold text-slate-900">{title}</p>
+      <div className="mt-4 h-64">
+        <ResponsiveContainer width="100%" height="100%">
+          <PieChart>
+            <Pie data={data} dataKey={dataKey} nameKey={nameKey} outerRadius={90} label>
+              {data.map((entry, index) => (
+                <Cell key={`${entry[nameKey]}-${index}`} fill={PIE_COLORS[index % PIE_COLORS.length]} />
+              ))}
+            </Pie>
+            <Tooltip />
+          </PieChart>
+        </ResponsiveContainer>
+      </div>
+    </div>
+  )
+}
+
+function BarCard({ title, data }: { title: string; data: Array<{ name: string; count: number }> }) {
+  return (
+    <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+      <p className="text-sm font-semibold text-slate-900">{title}</p>
+      <div className="mt-4 h-64">
+        <ResponsiveContainer width="100%" height="100%">
+          <BarChart data={data}>
+            <CartesianGrid strokeDasharray="3 3" />
+            <XAxis dataKey="name" />
+            <YAxis />
+            <Tooltip />
+            <Bar dataKey="count" fill="#2563eb" />
+          </BarChart>
+        </ResponsiveContainer>
+      </div>
+    </div>
+  )
+}
+
+function isDueInDays(dueDate: string | null, status: string, days: number) {
+  if (!dueDate || status === 'DONE') {
+    return false
+  }
+
+  const due = new Date(`${dueDate}T00:00:00`)
+  const now = new Date()
+  const diffDays = (due.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)
+  return diffDays >= 0 && diffDays <= days
+}
+
+function toDistribution(values: string[], key: string) {
+  return Object.entries(
+    values.reduce<Record<string, number>>((acc, value) => {
+      acc[value] = (acc[value] ?? 0) + 1
+      return acc
+    }, {}),
+  ).map(([name, count]) => ({ [key]: name, count }))
 }

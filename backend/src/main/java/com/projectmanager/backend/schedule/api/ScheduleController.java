@@ -1,5 +1,7 @@
 package com.projectmanager.backend.schedule.api;
 
+import com.projectmanager.backend.auth.security.AuthenticatedUser;
+import com.projectmanager.backend.auth.security.AuthenticationUtils;
 import com.projectmanager.backend.common.response.ApiResponse;
 import com.projectmanager.backend.schedule.application.ScheduleService;
 import com.projectmanager.backend.schedule.dto.ScheduleCreateRequest;
@@ -9,6 +11,7 @@ import jakarta.validation.Valid;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -25,36 +28,43 @@ public class ScheduleController {
 
     @GetMapping("/api/projects/{id}/schedules")
     public ResponseEntity<ApiResponse<List<ScheduleResponse>>> getProjectSchedules(
-            @PathVariable("id") Long projectId
+            @PathVariable("id") Long projectId,
+            Authentication authentication
     ) {
-        List<ScheduleResponse> response = scheduleService.getProjectSchedules(projectId);
+        AuthenticatedUser user = AuthenticationUtils.extractAuthenticatedUser(authentication);
+        List<ScheduleResponse> response = scheduleService.getProjectSchedules(projectId, user);
         return ResponseEntity.ok(ApiResponse.success("일정 목록을 조회했습니다.", response));
     }
 
     @PostMapping("/api/projects/{id}/schedules")
     public ResponseEntity<ApiResponse<ScheduleResponse>> createSchedule(
             @PathVariable("id") Long projectId,
-            @Valid @RequestBody ScheduleCreateRequest request
+            @Valid @RequestBody ScheduleCreateRequest request,
+            Authentication authentication
     ) {
-        ScheduleResponse response = scheduleService.createSchedule(projectId, request);
+        AuthenticatedUser user = AuthenticationUtils.extractAuthenticatedUser(authentication);
+        ScheduleResponse response = scheduleService.createSchedule(projectId, request, user);
         return ResponseEntity.ok(ApiResponse.success("일정을 생성했습니다.", response));
     }
 
     @PutMapping("/api/schedules/{scheduleId}")
     public ResponseEntity<ApiResponse<ScheduleResponse>> updateSchedule(
             @PathVariable("scheduleId") Long scheduleId,
-            @Valid @RequestBody ScheduleUpdateRequest request
+            @Valid @RequestBody ScheduleUpdateRequest request,
+            Authentication authentication
     ) {
-        ScheduleResponse response = scheduleService.updateSchedule(scheduleId, request);
+        AuthenticatedUser user = AuthenticationUtils.extractAuthenticatedUser(authentication);
+        ScheduleResponse response = scheduleService.updateSchedule(scheduleId, request, user);
         return ResponseEntity.ok(ApiResponse.success("일정을 수정했습니다.", response));
     }
 
     @DeleteMapping("/api/schedules/{scheduleId}")
     public ResponseEntity<ApiResponse<Void>> deleteSchedule(
-            @PathVariable("scheduleId") Long scheduleId
+            @PathVariable("scheduleId") Long scheduleId,
+            Authentication authentication
     ) {
-        scheduleService.deleteSchedule(scheduleId);
+        AuthenticatedUser user = AuthenticationUtils.extractAuthenticatedUser(authentication);
+        scheduleService.deleteSchedule(scheduleId, user);
         return ResponseEntity.ok(ApiResponse.success("일정을 삭제했습니다."));
     }
 }
-

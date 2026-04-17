@@ -1,7 +1,8 @@
 package com.projectmanager.backend.schedule.application;
 
+import com.projectmanager.backend.auth.security.AuthenticatedUser;
+import com.projectmanager.backend.project.application.ProjectAccessService;
 import com.projectmanager.backend.project.domain.Project;
-import com.projectmanager.backend.project.domain.ProjectRepository;
 import com.projectmanager.backend.schedule.domain.Schedule;
 import com.projectmanager.backend.schedule.domain.ScheduleRepository;
 import com.projectmanager.backend.schedule.dto.ScheduleCreateRequest;
@@ -18,11 +19,13 @@ import org.springframework.transaction.annotation.Transactional;
 public class ScheduleService {
 
     private final ScheduleRepository scheduleRepository;
-    private final ProjectRepository projectRepository;
+    private final ProjectAccessService projectAccessService;
 
     @Transactional(readOnly = true)
-    public List<ScheduleResponse> getProjectSchedules(Long projectId) {
-        ensureProjectExists(projectId);
+    public List<ScheduleResponse> getProjectSchedules(Long projectId, AuthenticatedUser authenticatedUser) {
+        Project project = projectAccessService.findProject(projectId);
+        projectAccessService.validateCanViewProject(authenticatedUser, project);
+
         return scheduleRepository.findByProjectIdOrderByStartDateTimeAsc(projectId)
                 .stream()
                 .map(ScheduleResponse::from)
@@ -30,8 +33,13 @@ public class ScheduleService {
     }
 
     @Transactional
-    public ScheduleResponse createSchedule(Long projectId, ScheduleCreateRequest request) {
-        Project project = findProject(projectId);
+    public ScheduleResponse createSchedule(
+            Long projectId,
+            ScheduleCreateRequest request,
+            AuthenticatedUser authenticatedUser
+    ) {
+        Project project = projectAccessService.findProject(projectId);
+        projectAccessService.validateCanManageProject(authenticatedUser, project);
         validateDateTimeRange(request.startDateTime(), request.endDateTime());
 
         Schedule schedule = Schedule.create(
@@ -48,8 +56,13 @@ public class ScheduleService {
     }
 
     @Transactional
-    public ScheduleResponse updateSchedule(Long scheduleId, ScheduleUpdateRequest request) {
+    public ScheduleResponse updateSchedule(
+            Long scheduleId,
+            ScheduleUpdateRequest request,
+            AuthenticatedUser authenticatedUser
+    ) {
         Schedule schedule = findSchedule(scheduleId);
+        projectAccessService.validateCanManageProject(authenticatedUser, schedule.getProject());
         validateDateTimeRange(request.startDateTime(), request.endDateTime());
 
         schedule.update(
@@ -64,11 +77,10 @@ public class ScheduleService {
     }
 
     @Transactional
-    public void deleteSchedule(Long scheduleId) {
-        if (!scheduleRepository.existsById(scheduleId)) {
-            throw new IllegalArgumentException("일정을 찾을 수 없습니다.");
-        }
-        scheduleRepository.deleteById(scheduleId);
+    public void deleteSchedule(Long scheduleId, AuthenticatedUser authenticatedUser) {
+        Schedule schedule = findSchedule(scheduleId);
+        projectAccessService.validateCanManageProject(authenticatedUser, schedule.getProject());
+        scheduleRepository.delete(schedule);
     }
 
     private void validateDateTimeRange(LocalDateTime startDateTime, LocalDateTime endDateTime) {
@@ -77,20 +89,8 @@ public class ScheduleService {
         }
     }
 
-    private void ensureProjectExists(Long projectId) {
-        if (!projectRepository.existsById(projectId)) {
-            throw new IllegalArgumentException("프로젝트를 찾을 수 없습니다.");
-        }
-    }
-
-    private Project findProject(Long projectId) {
-        return projectRepository.findById(projectId)
-                .orElseThrow(() -> new IllegalArgumentException("프로젝트를 찾을 수 없습니다."));
-    }
-
     private Schedule findSchedule(Long scheduleId) {
         return scheduleRepository.findById(scheduleId)
                 .orElseThrow(() -> new IllegalArgumentException("일정을 찾을 수 없습니다."));
     }
 }
-

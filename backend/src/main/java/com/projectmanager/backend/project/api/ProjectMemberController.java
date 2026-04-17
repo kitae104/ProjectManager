@@ -1,5 +1,7 @@
 package com.projectmanager.backend.project.api;
 
+import com.projectmanager.backend.auth.security.AuthenticatedUser;
+import com.projectmanager.backend.auth.security.AuthenticationUtils;
 import com.projectmanager.backend.common.response.ApiResponse;
 import com.projectmanager.backend.project.application.ProjectService;
 import com.projectmanager.backend.project.dto.ProjectMemberCreateRequest;
@@ -8,6 +10,7 @@ import jakarta.validation.Valid;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -25,28 +28,33 @@ public class ProjectMemberController {
 
     @GetMapping
     public ResponseEntity<ApiResponse<List<ProjectMemberResponse>>> getMembers(
-            @PathVariable("id") Long projectId
+            @PathVariable("id") Long projectId,
+            Authentication authentication
     ) {
-        List<ProjectMemberResponse> response = projectService.getProjectMembers(projectId);
+        AuthenticatedUser authenticatedUser = AuthenticationUtils.extractAuthenticatedUser(authentication);
+        List<ProjectMemberResponse> response = projectService.getProjectMembers(projectId, authenticatedUser);
         return ResponseEntity.ok(ApiResponse.success("프로젝트 팀원 목록을 조회했습니다.", response));
     }
 
     @PostMapping
     public ResponseEntity<ApiResponse<ProjectMemberResponse>> addMember(
             @PathVariable("id") Long projectId,
-            @Valid @RequestBody ProjectMemberCreateRequest request
+            @Valid @RequestBody ProjectMemberCreateRequest request,
+            Authentication authentication
     ) {
-        ProjectMemberResponse response = projectService.addProjectMember(projectId, request);
+        AuthenticatedUser authenticatedUser = AuthenticationUtils.extractAuthenticatedUser(authentication);
+        ProjectMemberResponse response = projectService.addProjectMember(projectId, request, authenticatedUser);
         return ResponseEntity.ok(ApiResponse.success("프로젝트 팀원을 추가했습니다.", response));
     }
 
     @DeleteMapping("/{memberId}")
     public ResponseEntity<ApiResponse<Void>> removeMember(
             @PathVariable("id") Long projectId,
-            @PathVariable("memberId") Long memberId
+            @PathVariable("memberId") Long memberId,
+            Authentication authentication
     ) {
-        projectService.removeProjectMember(projectId, memberId);
+        AuthenticatedUser authenticatedUser = AuthenticationUtils.extractAuthenticatedUser(authentication);
+        projectService.removeProjectMember(projectId, memberId, authenticatedUser);
         return ResponseEntity.ok(ApiResponse.success("프로젝트 팀원을 제거했습니다."));
     }
 }
-
