@@ -90,14 +90,11 @@ public class ProjectDocument {
             String title,
             DocumentType type,
             String content,
-            String version,
-            User author
+            String version
     ) {
         this.title = title;
         this.type = type;
         this.content = content;
         this.version = version;
-        this.author = author;
     }
 }
-

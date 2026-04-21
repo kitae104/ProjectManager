@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useMemo, useState } from 'react'
-import { useParams } from 'react-router-dom'
+import { useNavigate, useParams } from 'react-router-dom'
 import { useAuthStore } from '../features/auth/store/useAuthStore'
 import {
   createMeetingNote,
@@ -41,6 +41,7 @@ function toDateTimeLocalValue(value: string | null) {
 
 export function ProjectMeetingsPage() {
   const queryClient = useQueryClient()
+  const navigate = useNavigate()
   const { projectId } = useParams()
   const numericProjectId = Number(projectId)
   const currentUser = useAuthStore((state) => state.user)
@@ -136,6 +137,14 @@ export function ProjectMeetingsPage() {
     })
   }
 
+  function handleGoBack() {
+    if (window.history.length > 1) {
+      navigate(-1)
+      return
+    }
+    navigate(`/projects/${numericProjectId}`)
+  }
+
   if (!Number.isFinite(numericProjectId)) {
     return <p className="text-sm text-red-600">유효하지 않은 프로젝트 ID입니다.</p>
   }
@@ -145,12 +154,23 @@ export function ProjectMeetingsPage() {
   return (
     <section className="space-y-6">
       <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-        <h2 className="text-xl font-bold text-slate-900">회의록 관리</h2>
-        <p className="mt-1 text-sm text-slate-600">
-          {isProjectLeader
-            ? '회의 내용을 기록하고 핵심 요약과 액션 아이템을 관리합니다.'
-            : '관리자/팀원은 회의록을 조회할 수 있습니다.'}
-        </p>
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <h2 className="text-xl font-bold text-slate-900">회의록 관리</h2>
+            <p className="mt-1 text-sm text-slate-600">
+              {isProjectLeader
+                ? '회의 내용을 기록하고 핵심 요약과 액션 아이템을 관리합니다.'
+                : '관리자/팀원은 회의록을 조회할 수 있습니다.'}
+            </p>
+          </div>
+          <button
+            type="button"
+            className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100"
+            onClick={handleGoBack}
+          >
+            이전 화면
+          </button>
+        </div>
       </div>
 
       {isProjectLeader && (
@@ -169,46 +189,76 @@ export function ProjectMeetingsPage() {
             {selectedMeeting ? '회의록 수정' : '회의록 작성'}
           </h3>
           <div className="mt-4 grid gap-3 md:grid-cols-2">
-            <input
-              className="rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-blue-500"
-              placeholder="회의 제목"
-              value={form.title}
-              onChange={(event) => setForm((prev) => ({ ...prev, title: event.target.value }))}
-              required
-            />
-            <input
-              type="datetime-local"
-              className="rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-blue-500"
-              value={form.meetingDateTime}
-              onChange={(event) =>
-                setForm((prev) => ({ ...prev, meetingDateTime: event.target.value }))
-              }
-              required
-            />
-            <input
-              className="md:col-span-2 rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-blue-500"
-              placeholder="참석자 (쉼표로 구분)"
-              value={form.attendees}
-              onChange={(event) =>
-                setForm((prev) => ({ ...prev, attendees: event.target.value }))
-              }
-              required
-            />
-            <textarea
-              className="md:col-span-2 min-h-36 rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-blue-500"
-              placeholder="주요 논의 내용"
-              value={form.content}
-              onChange={(event) =>
-                setForm((prev) => ({ ...prev, content: event.target.value }))
-              }
-              required
-            />
-            <textarea
-              className="md:col-span-2 min-h-24 rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-blue-500"
-              placeholder="요약 (선택)"
-              value={form.summary}
-              onChange={(event) => setForm((prev) => ({ ...prev, summary: event.target.value }))}
-            />
+            <div className="space-y-1">
+              <label htmlFor="meeting-title" className="text-xs font-medium text-slate-700">
+                회의 제목
+              </label>
+              <input
+                id="meeting-title"
+                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-blue-500"
+                placeholder="회의 제목"
+                value={form.title}
+                onChange={(event) => setForm((prev) => ({ ...prev, title: event.target.value }))}
+                required
+              />
+            </div>
+            <div className="space-y-1">
+              <label htmlFor="meeting-datetime" className="text-xs font-medium text-slate-700">
+                회의 일시
+              </label>
+              <input
+                id="meeting-datetime"
+                type="datetime-local"
+                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-blue-500"
+                value={form.meetingDateTime}
+                onChange={(event) =>
+                  setForm((prev) => ({ ...prev, meetingDateTime: event.target.value }))
+                }
+                required
+              />
+            </div>
+            <div className="space-y-1 md:col-span-2">
+              <label htmlFor="meeting-attendees" className="text-xs font-medium text-slate-700">
+                참석자
+              </label>
+              <input
+                id="meeting-attendees"
+                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-blue-500"
+                placeholder="참석자 (쉼표로 구분)"
+                value={form.attendees}
+                onChange={(event) =>
+                  setForm((prev) => ({ ...prev, attendees: event.target.value }))
+                }
+                required
+              />
+            </div>
+            <div className="space-y-1 md:col-span-2">
+              <label htmlFor="meeting-content" className="text-xs font-medium text-slate-700">
+                주요 논의 내용
+              </label>
+              <textarea
+                id="meeting-content"
+                className="min-h-36 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-blue-500"
+                placeholder="주요 논의 내용"
+                value={form.content}
+                onChange={(event) =>
+                  setForm((prev) => ({ ...prev, content: event.target.value }))
+                }
+                required
+              />
+            </div>
+            <div className="space-y-1 md:col-span-2">
+              <label htmlFor="meeting-summary" className="text-xs font-medium text-slate-700">
+                요약
+              </label>
+              <textarea
+                id="meeting-summary"
+                className="min-h-24 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-blue-500"
+                placeholder="요약 (선택)"
+                value={form.summary}
+                onChange={(event) => setForm((prev) => ({ ...prev, summary: event.target.value }))}
+              />
+            </div>
           </div>
           <div className="mt-4 flex flex-wrap gap-2">
             <button

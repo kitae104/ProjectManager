@@ -2,11 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useEffect, useState } from 'react'
 import type { FormEvent } from 'react'
 import { Link } from 'react-router-dom'
-import {
-  canRoleCreateProject,
-  getRoleCapability,
-} from '../features/auth/constants/roleCapabilities'
-import { getUserRoleLabel } from '../features/auth/constants/roleLabels'
+import { canRoleCreateProject } from '../features/auth/constants/roleCapabilities'
 import { useAuthStore } from '../features/auth/store/useAuthStore'
 import { createProject, getProjects } from '../features/projects/api/projectsApi'
 import { getUsers } from '../features/users/api/usersApi'
@@ -53,7 +49,6 @@ const statusLabels: Record<ProjectStatus, string> = {
 export function ProjectsPage() {
   const queryClient = useQueryClient()
   const currentUser = useAuthStore((state) => state.user)
-  const roleCapability = getRoleCapability(currentUser?.role)
 
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
@@ -129,22 +124,6 @@ export function ProjectsPage() {
           전체 프로젝트를 조회하고, 새 프로젝트를 생성하거나 상세 작업 공간으로 이동할 수 있습니다.
         </p>
       </div>
-
-      {currentUser?.role !== 'ADMIN' && (
-        <article className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-          <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">
-            역할 권한
-          </p>
-          <p className="mt-2 text-sm text-slate-700">
-            현재 역할: <span className="font-semibold">{getUserRoleLabel(currentUser?.role)}</span>
-          </p>
-          <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-slate-600">
-            {roleCapability.features.map((feature) => (
-              <li key={feature}>{feature}</li>
-            ))}
-          </ul>
-        </article>
-      )}
 
       {canCreateProject ? (
         <form
@@ -257,14 +236,7 @@ export function ProjectsPage() {
             {createMutation.isPending ? '생성 중...' : '프로젝트 생성'}
           </button>
         </form>
-      ) : (
-        <article className="rounded-2xl border border-amber-200 bg-amber-50 p-6 shadow-sm">
-          <h3 className="text-base font-semibold text-amber-900">프로젝트 생성 권한이 없습니다</h3>
-          <p className="mt-2 text-sm text-amber-800">
-            프로젝트 생성과 팀장 지정은 관리자 권한으로만 가능합니다.
-          </p>
-        </article>
-      )}
+      ) : null}
 
       <div className="grid gap-4">
         <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">

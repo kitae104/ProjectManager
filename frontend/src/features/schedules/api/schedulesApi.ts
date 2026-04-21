@@ -42,3 +42,13 @@ export async function deleteSchedule(scheduleId: number) {
   return response.data
 }
 
+export type ScheduleEmailNotificationResult = {
+  recipientCount: number
+}
+
+export async function sendScheduleNotificationEmail(scheduleId: number) {
+  const response = await httpClient.post<ApiResponse<ScheduleEmailNotificationResult>>(
+    `/api/schedules/${scheduleId}/notify-email`,
+  )
+  return response.data
+}

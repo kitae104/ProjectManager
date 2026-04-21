@@ -3,9 +3,11 @@ package com.projectmanager.backend.schedule.application;
 import com.projectmanager.backend.auth.security.AuthenticatedUser;
 import com.projectmanager.backend.project.application.ProjectAccessService;
 import com.projectmanager.backend.project.domain.Project;
+import com.projectmanager.backend.project.domain.ProjectMemberRepository;
 import com.projectmanager.backend.schedule.domain.Schedule;
 import com.projectmanager.backend.schedule.domain.ScheduleRepository;
 import com.projectmanager.backend.schedule.dto.ScheduleCreateRequest;
+import com.projectmanager.backend.schedule.dto.ScheduleEmailNotificationResponse;
 import com.projectmanager.backend.schedule.dto.ScheduleResponse;
 import com.projectmanager.backend.schedule.dto.ScheduleUpdateRequest;
 import java.time.LocalDateTime;
@@ -20,6 +22,8 @@ public class ScheduleService {
 
     private final ScheduleRepository scheduleRepository;
     private final ProjectAccessService projectAccessService;
+    private final ProjectMemberRepository projectMemberRepository;
+    private final ScheduleEmailNotificationService scheduleEmailNotificationService;
 
     @Transactional(readOnly = true)
     public List<ScheduleResponse> getProjectSchedules(Long projectId, AuthenticatedUser authenticatedUser) {
@@ -81,6 +85,34 @@ public class ScheduleService {
         Schedule schedule = findSchedule(scheduleId);
         projectAccessService.validateCanManageProject(authenticatedUser, schedule.getProject());
         scheduleRepository.delete(schedule);
+    }
+
+    @Transactional(readOnly = true)
+    public ScheduleEmailNotificationResponse sendScheduleNotificationEmail(
+            Long scheduleId,
+            AuthenticatedUser authenticatedUser
+    ) {
+        Schedule schedule = findSchedule(scheduleId);
+        projectAccessService.validateCanManageProject(authenticatedUser, schedule.getProject());
+
+        List<String> recipients = projectMemberRepository.findByProjectId(schedule.getProject().getId())
+                .stream()
+                .map(member -> member.getUser().getEmail())
+                .filter(email -> email != null && !email.isBlank())
+                .distinct()
+                .toList();
+
+        if (recipients.isEmpty()) {
+            throw new IllegalArgumentException("수신 가능한 팀원 이메일이 없습니다.");
+        }
+
+        int recipientCount = scheduleEmailNotificationService.sendScheduleCreatedEmail(
+                schedule.getProject(),
+                schedule,
+                recipients
+        );
+
+        return new ScheduleEmailNotificationResponse(recipientCount);
     }
 
     private void validateDateTimeRange(LocalDateTime startDateTime, LocalDateTime endDateTime) {

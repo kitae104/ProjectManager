@@ -43,7 +43,7 @@ public class ArtifactService {
             AuthenticatedUser authenticatedUser
     ) {
         Project project = projectAccessService.findProject(projectId);
-        projectAccessService.validateCanManageProject(authenticatedUser, project);
+        projectAccessService.validateCanViewProject(authenticatedUser, project);
         User uploader = findUser(authenticatedUser.userId());
         validateUploadFile(file);
 

@@ -12,18 +12,12 @@ import {
   YAxis,
 } from 'recharts'
 import { getMyInfo } from '../features/auth/api/authApi'
-import { getUserRoleLabel } from '../features/auth/constants/roleLabels'
-import { getHealth } from '../features/health/api/getHealth'
 import { getProjectMembers, getProjects } from '../features/projects/api/projectsApi'
 import { getProjectTasks } from '../features/tasks/api/tasksApi'
 
 const PIE_COLORS = ['#2563eb', '#16a34a', '#f59e0b', '#dc2626', '#7c3aed', '#64748b']
 
 export function DashboardPage() {
-  const healthQuery = useQuery({
-    queryKey: ['health-check'],
-    queryFn: getHealth,
-  })
 
   const meQuery = useQuery({
     queryKey: ['my-info'],
@@ -99,14 +93,14 @@ export function DashboardPage() {
     role === 'ADMIN'
       ? '전체 프로젝트를 생성/관제하고 전사 현황을 확인합니다.'
       : role === 'LEADER'
-        ? '내 프로젝트와 팀 운영 상태를 점검합니다.'
+        ? '팀 운영 핵심 지표를 확인합니다.'
         : '내 할당 업무의 일정과 진행 상태를 관리합니다.'
 
   return (
     <section className="space-y-4">
       <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
         <h2 className="text-xl font-bold text-slate-900">{dashboardTitle}</h2>
-        <p className="mt-2 text-sm text-slate-600">{dashboardDescription}</p>
+        <p className="mt-1 text-sm text-slate-600">{dashboardDescription}</p>
       </div>
 
       <div className="grid gap-4 md:grid-cols-4">
@@ -120,10 +114,10 @@ export function DashboardPage() {
         )}
         {role === 'LEADER' && (
           <>
-            <MetricCard title="내 프로젝트 수" value={`${projects.length}`} />
-            <MetricCard title="관리 중 팀원 수" value={`${managedTeamMemberCount}`} />
+            <MetricCard title="내 프로젝트" value={`${projects.length}`} />
+            <MetricCard title="관리 팀원" value={`${managedTeamMemberCount}`} />
             <MetricCard title="블로킹 업무" value={`${blockedTasks}`} />
-            <MetricCard title="이번 주 마감 업무" value={`${thisWeekDeadlineTasks}`} />
+            <MetricCard title="금주 마감" value={`${thisWeekDeadlineTasks}`} />
           </>
         )}
         {role === 'MEMBER' && (
@@ -135,55 +129,15 @@ export function DashboardPage() {
           </>
         )}
       </div>
-
-      <div className="grid gap-4 md:grid-cols-2">
-        <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-          <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">
-            Backend Health
-          </p>
-          {healthQuery.isLoading && <p className="mt-2 text-sm text-slate-600">헬스체크 조회 중...</p>}
-          {healthQuery.isError && (
-            <p className="mt-2 text-sm text-red-600">
-              백엔드 연결에 실패했습니다. `VITE_API_BASE_URL` 또는 서버 실행 상태를 확인해 주세요.
-            </p>
-          )}
-          {healthQuery.isSuccess && (
-            <div className="mt-2 text-sm text-slate-700">
-              <p>
-                상태: <span className="font-semibold text-emerald-600">{healthQuery.data.data.status}</span>
-              </p>
-              <p>서비스: {healthQuery.data.data.service}</p>
-            </div>
-          )}
-        </div>
-
-        <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-          <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">Auth / Me API</p>
-          {meQuery.isLoading && <p className="mt-2 text-sm text-slate-600">내 정보 조회 중...</p>}
-          {meQuery.isError && (
-            <p className="mt-2 text-sm text-red-600">
-              인증 정보가 유효하지 않습니다. 다시 로그인해 주세요.
-            </p>
-          )}
-          {meQuery.isSuccess && (
-            <div className="mt-2 text-sm text-slate-700">
-              <p>이름: {meQuery.data.data.name}</p>
-              <p>이메일: {meQuery.data.data.email}</p>
-              <p>역할: {getUserRoleLabel(meQuery.data.data.role)}</p>
-            </div>
-          )}
-        </div>
-      </div>
-
       {(role === 'ADMIN' || role === 'LEADER') && (
         <div className="grid gap-4 lg:grid-cols-2">
           <ChartCard
-            title={role === 'ADMIN' ? '프로젝트 상태 분포' : '업무 상태 분포'}
+            title={role === 'ADMIN' ? '프로젝트 상태 분포' : '업무 상태'}
             data={role === 'ADMIN' ? projectStatusDistribution : taskStatusDistribution}
             dataKey="count"
             nameKey="status"
           />
-          <BarCard title="팀원별 업무 분포" data={memberTaskData} />
+          <BarCard title="팀원 업무" data={memberTaskData} />
         </div>
       )}
 

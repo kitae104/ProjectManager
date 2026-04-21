@@ -5,6 +5,7 @@ import com.projectmanager.backend.auth.security.AuthenticationUtils;
 import com.projectmanager.backend.common.response.ApiResponse;
 import com.projectmanager.backend.schedule.application.ScheduleService;
 import com.projectmanager.backend.schedule.dto.ScheduleCreateRequest;
+import com.projectmanager.backend.schedule.dto.ScheduleEmailNotificationResponse;
 import com.projectmanager.backend.schedule.dto.ScheduleResponse;
 import com.projectmanager.backend.schedule.dto.ScheduleUpdateRequest;
 import jakarta.validation.Valid;
@@ -66,5 +67,16 @@ public class ScheduleController {
         AuthenticatedUser user = AuthenticationUtils.extractAuthenticatedUser(authentication);
         scheduleService.deleteSchedule(scheduleId, user);
         return ResponseEntity.ok(ApiResponse.success("일정을 삭제했습니다."));
+    }
+
+    @PostMapping("/api/schedules/{scheduleId}/notify-email")
+    public ResponseEntity<ApiResponse<ScheduleEmailNotificationResponse>> notifyScheduleByEmail(
+            @PathVariable("scheduleId") Long scheduleId,
+            Authentication authentication
+    ) {
+        AuthenticatedUser user = AuthenticationUtils.extractAuthenticatedUser(authentication);
+        ScheduleEmailNotificationResponse response =
+                scheduleService.sendScheduleNotificationEmail(scheduleId, user);
+        return ResponseEntity.ok(ApiResponse.success("일정 안내 메일을 발송했습니다.", response));
     }
 }

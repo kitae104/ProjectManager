@@ -2,6 +2,7 @@ package com.projectmanager.backend.document.application;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.projectmanager.backend.auth.security.AuthenticatedUser;
 import com.projectmanager.backend.document.domain.DocumentType;
@@ -18,6 +19,7 @@ import com.projectmanager.backend.user.domain.UserRole;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 @SpringBootTest
@@ -96,5 +98,80 @@ class DocumentServiceTest {
 
         assertEquals(DocumentType.TECHNICAL_DOC, updated.type());
         assertEquals("v1.1", updated.version());
+    }
+
+    @Test
+    void shouldDenyUpdateWhenNotAuthor() {
+        String suffix = String.valueOf(System.nanoTime());
+        User author = userRepository.save(
+                User.create(
+                        "Document Author",
+                        "document-author-deny-" + suffix + "@example.com",
+                        passwordEncoder.encode("password1234"),
+                        UserRole.LEADER,
+                        "CS"
+                )
+        );
+
+        User admin = userRepository.save(
+                User.create(
+                        "Admin User",
+                        "document-admin-" + suffix + "@example.com",
+                        passwordEncoder.encode("password1234"),
+                        UserRole.ADMIN,
+                        "CS"
+                )
+        );
+
+        Project project = projectRepository.save(
+                Project.create(
+                        "Document Permission Project",
+                        "Document 권한 테스트용 프로젝트",
+                        ProjectCategory.DEVELOPMENT,
+                        ProjectStatus.IN_PROGRESS,
+                        "2026-1",
+                        null,
+                        null,
+                        30,
+                        author
+                )
+        );
+
+        AuthenticatedUser authorAuth = new AuthenticatedUser(
+                author.getId(),
+                author.getEmail(),
+                author.getRole()
+        );
+
+        DocumentResponse created = documentService.createDocument(
+                project.getId(),
+                new DocumentCreateRequest(
+                        "권한 테스트 문서",
+                        DocumentType.PROJECT_OVERVIEW,
+                        "작성자만 수정 가능 테스트",
+                        "v1.0"
+                ),
+                authorAuth
+        );
+
+        AuthenticatedUser adminAuth = new AuthenticatedUser(
+                admin.getId(),
+                admin.getEmail(),
+                admin.getRole()
+        );
+
+        assertThrows(
+                AccessDeniedException.class,
+                () -> documentService.updateDocument(
+                        created.id(),
+                        new DocumentUpdateRequest(
+                                "권한 테스트 문서",
+                                DocumentType.TECHNICAL_DOC,
+                                "관리자 수정 시도",
+                                "v1.1"
+                        ),
+                        adminAuth
+                )
+        );
     }
 }

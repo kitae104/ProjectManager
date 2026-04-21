@@ -15,11 +15,6 @@ export async function uploadArtifact(projectId: number, file: File) {
   const response = await httpClient.post<ApiResponse<Artifact>>(
     `/api/projects/${projectId}/artifacts`,
     formData,
-    {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
-    },
   )
   return response.data
 }
@@ -45,4 +40,3 @@ export async function downloadArtifact(artifactId: number, fileName: string) {
   link.remove()
   window.URL.revokeObjectURL(blobUrl)
 }
-

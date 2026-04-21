@@ -12,6 +12,7 @@ import com.projectmanager.backend.user.domain.User;
 import com.projectmanager.backend.user.domain.UserRepository;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -70,15 +71,17 @@ public class DocumentService {
             AuthenticatedUser authenticatedUser
     ) {
         ProjectDocument document = findDocument(documentId);
-        projectAccessService.validateCanManageProject(authenticatedUser, document.getProject());
-        User author = findUser(authenticatedUser.userId());
+        projectAccessService.validateCanViewProject(authenticatedUser, document.getProject());
+
+        if (!document.getAuthor().getId().equals(authenticatedUser.userId())) {
+            throw new AccessDeniedException("문서 수정은 작성자만 가능합니다.");
+        }
 
         document.update(
                 request.title(),
                 request.type(),
                 request.content(),
-                request.version(),
-                author
+                request.version()
         );
         return DocumentResponse.from(document);
     }
